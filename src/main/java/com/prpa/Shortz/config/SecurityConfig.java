@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.support.DelegatingMessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.security.SecureRandom;
 
@@ -43,8 +46,8 @@ public class SecurityConfig {
         return http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/images/**").permitAll()
                         .requestMatchers("/*").permitAll()
-                        .requestMatchers("/user/login").permitAll()
-                        .requestMatchers("/user/register").permitAll()
+                        .requestMatchers("/user/login").anonymous()
+                        .requestMatchers("/user/register").anonymous()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(customizer -> customizer
@@ -60,8 +63,16 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    @Profile("dev")
+    @Autowired
+    public void configureDelegatingMessageSource(DelegatingMessageSource delegatingMessageSource) {
+        var messageSource = new ResourceBundleMessageSource();
+        messageSource.addBasenames("bundles.exceptions", "bundles.messages");
+        messageSource.setUseCodeAsDefaultMessage(true);
+
+        delegatingMessageSource.setParentMessageSource(messageSource);
+    }
+
+    @Bean @Profile("dev")
     public WebSecurityCustomizer ignoreH2() {
         return web -> web.ignoring()
                 .requestMatchers(new AntPathRequestMatcher("/h2-console/**"));
