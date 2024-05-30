@@ -2,9 +2,14 @@ package com.prpa.Shortz.model;
 
 import com.prpa.Shortz.model.enums.Role;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,27 +19,34 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor @AllArgsConstructor @Builder
 @Table(name = "shortz_user")
 public class ShortzUser implements UserDetails {
+
+    public static final int UNLIMITED_URL_COUNT = -1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false)
     private Long id;
 
+    @NotBlank @Length(min = 3, max = 255)
     @Column(name = "username", unique = true, nullable = false)
     private String username;
 
+    @Email @NotBlank @Length(min = 3, max = 255)
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
+    @NotNull
     @Column(name = "url_count", nullable = false)
-    private Integer url_count;
+    private Integer urlCount;
 
+    @NotBlank @Length(min = 6, max = 255)
     @Column(name = "password", nullable = false)
     private String password;
 
+    @NotNull
     @Column(name = "role", nullable = false)
     private Role role;
 

@@ -20,7 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.security.SecureRandom;
 
@@ -121,7 +120,7 @@ public class SecurityConfig {
             if (USER.equals("generate") || PASSWORD.equals("generate"))
                 System.out.println(message);
 
-            ShortzUser dev = new ShortzUser(0L, USER, "dev@dev.com", 10, encoder.encode(PASSWORD), Role.ADMIN, true);
+            ShortzUser dev = new ShortzUser(0L, USER, "dev@dev.com", ShortzUser.UNLIMITED_URL_COUNT, encoder.encode(PASSWORD), Role.ADMIN, true);
             userRepository.save(dev);
         };
     }

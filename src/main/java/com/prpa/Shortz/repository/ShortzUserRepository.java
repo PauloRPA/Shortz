@@ -12,6 +12,13 @@ public interface ShortzUserRepository extends JpaRepository<ShortzUser, Long> {
 
     boolean existsByRole(Role role);
 
-    Optional<ShortzUser> findByUsernameOrEmail(String username, String email);
+    boolean existsByEmailIgnoreCase(String email);
 
+    boolean existsByUsernameIgnoreCase(String username);
+
+    Optional<ShortzUser> findByUsernameOrEmailIgnoreCase(String username, String email);
+
+    Optional<ShortzUser> findByEmailIgnoreCase(String email);
+
+    Optional<ShortzUser> findByUsernameIgnoreCase(String username);
 }
