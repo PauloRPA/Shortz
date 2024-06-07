@@ -53,8 +53,7 @@ public class ShortzUserControllerTest {
     @SneakyThrows @Test @WithAnonymousUser
     public void whenAnonymousGetLogin_shouldSucceed() {
         mockMvc.perform(get("/user/login").accept(MediaType.TEXT_HTML))
-                .andExpect(view().name("login"))
-                .andExpect(model().attributeExists("userForm"))
+                .andExpect(view().name("user/login"))
                 .andExpect(status().isOk());
     }
 

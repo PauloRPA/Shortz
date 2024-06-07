@@ -96,6 +96,8 @@ public class SecurityConfig {
             final int USER_LENGTH = 8;
             final int PASSWORD_LENGTH = 12;
 
+            final boolean generatedCredentials = USER.equals("generate") || PASSWORD.equals("generate");
+
             String PASSWD_DICT = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             StringBuilder message = new StringBuilder();
 
@@ -117,7 +119,7 @@ public class SecurityConfig {
             message.append("\nUser: %s\n".formatted(USER));
             message.append("Password: %s\n".formatted(PASSWORD));
 
-            if (USER.equals("generate") || PASSWORD.equals("generate"))
+            if (generatedCredentials)
                 System.out.println(message);
 
             ShortzUser dev = new ShortzUser(0L, USER, "dev@dev.com", ShortzUser.UNLIMITED_URL_COUNT, encoder.encode(PASSWORD), Role.ADMIN, true);
