@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/*").permitAll()
                         .requestMatchers("/user/login").anonymous()
                         .requestMatchers("/user/register").anonymous()
+                        .requestMatchers("/webjars/**").anonymous()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(customizer -> customizer
