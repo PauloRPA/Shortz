@@ -50,7 +50,7 @@ public class ShortzUserService implements UserDetailsService {
         savedDTO.setUsername(userSaved.getUsername());
         savedDTO.setEmail(userSaved.getEmail());
         savedDTO.setRole(userSaved.getRole());
-        savedDTO.setUrl_count(userSaved.getUrlCount());
+        savedDTO.setUrlCount(userSaved.getUrlCount());
         savedDTO.setEnabled(userSaved.getEnabled());
 
         return savedDTO;

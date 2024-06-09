@@ -22,17 +22,9 @@ public class ShortzUserController {
 
     private final ShortzUserService shortzUserService;
 
-    private final ShortzUserFormValidator shortzUserFormValidator;
-
     @Autowired
-    public ShortzUserController(ShortzUserService shortzUserService, ShortzUserFormValidator shortzUserFormValidator) {
+    public ShortzUserController(ShortzUserService shortzUserService) {
         this.shortzUserService = shortzUserService;
-        this.shortzUserFormValidator = shortzUserFormValidator;
-    }
-
-    @InitBinder
-    public void initBinderValidator(WebDataBinder binder) {
-        binder.addValidators(shortzUserFormValidator);
     }
 
     @GetMapping("/login")
@@ -57,6 +49,14 @@ public class ShortzUserController {
                     if (!field.isBlank())
                         result.rejectValue(field, globalFieldMatchError.getDefaultMessage(), "The fields must match.");
                 });
+
+        if (shortzUserService.existsByUsernameIgnoreCase(form.getUsername())) {
+            result.rejectValue("username", "error.exists");
+        }
+
+        if (shortzUserService.existsByEmailIgnoreCase(form.getEmail())) {
+            result.rejectValue("email","error.exists");
+        }
 
         if (result.hasErrors()) {
             UriComponents registerNewUserUri = MvcUriComponentsBuilder

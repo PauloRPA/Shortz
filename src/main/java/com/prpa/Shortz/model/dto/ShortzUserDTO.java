@@ -13,7 +13,7 @@ public class ShortzUserDTO {
 
     private String email;
 
-    private Integer url_count;
+    private Integer urlCount;
 
     private Role role;
 
