@@ -98,6 +98,7 @@ public class ShortzUserControllerTest {
     }
 
 
+    // REGISTRATION
     @SneakyThrows @Test @WithAnonymousUser
     public void whenAnonymousUserTriesToRegister_shouldSuccess() {
         mockMvc.perform(post("/user/register").with(csrf())
@@ -139,5 +140,24 @@ public class ShortzUserControllerTest {
                 .andExpect(model().attributeHasFieldErrorCode("userForm","email", "error.exists"))
                 .andExpect(status().isOk()).andDo(print());
     }
+
+    // GET ADM_PANEL
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetAdminPanel_shouldSucceed() {
+        mockMvc.perform(get("/user/adm/admin_panel")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("userPage"))
+                .andExpect(status().isOk());
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetAdminPanelWithNonexistentPage_shouldRedirectToP0() {
+        String PAGE_THAT_DOESNT_EXIST = "999";
+        mockMvc.perform(get("/user/adm/admin_panel")
+                        .param("p", PAGE_THAT_DOESNT_EXIST)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound());
+    }
+
 
 }

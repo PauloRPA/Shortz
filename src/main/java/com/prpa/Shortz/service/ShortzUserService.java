@@ -5,6 +5,8 @@ import com.prpa.Shortz.model.dto.ShortzUserDTO;
 import com.prpa.Shortz.model.enums.Role;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -54,6 +56,19 @@ public class ShortzUserService implements UserDetailsService {
         savedDTO.setEnabled(userSaved.getEnabled());
 
         return savedDTO;
+    }
+
+    public Page<ShortzUserDTO> findAll(int page, int pageSize) {
+        Page<ShortzUser> users =  shortzUserRepository.findAll(Pageable.ofSize(pageSize).withPage(page));
+        return users.map(user -> {
+            ShortzUserDTO shortzUserDTO = new ShortzUserDTO();
+            shortzUserDTO.setUsername(user.getUsername());
+            shortzUserDTO.setEmail(user.getEmail());
+            shortzUserDTO.setRole(user.getRole());
+            shortzUserDTO.setEnabled(user.getEnabled());
+            shortzUserDTO.setUrlCount(user.getUrlCount());
+            return shortzUserDTO;
+        });
     }
 
     public boolean existsByEmailIgnoreCase(String email) {

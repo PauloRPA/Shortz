@@ -45,9 +45,10 @@ public class SecurityConfig {
         return http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/images/**").permitAll()
                         .requestMatchers("/*").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/user/login").anonymous()
                         .requestMatchers("/user/register").anonymous()
-                        .requestMatchers("/webjars/**").anonymous()
+                        .requestMatchers("/user/adm/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(customizer -> customizer

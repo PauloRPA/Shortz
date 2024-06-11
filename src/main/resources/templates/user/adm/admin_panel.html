@@ -71,8 +71,8 @@
                 </li>
 
                 <li th:each="page, stat : ${pagination}" class="page-item">
-                    <a th:href="@{${url}(p=${stat.index})}" th:text="${stat.index + 1}" class="page-link border-0"
-                        th:classappend="${stat.index == userPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
+                    <a th:href="@{${url}(p=${page})}" th:text="${page + 1}" class="page-link border-0"
+                        th:classappend="${page == userPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
                 <li th:if="${!userPage.isLast}" class="page-item">
