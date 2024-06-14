@@ -164,5 +164,47 @@ public class ShortzUserController {
         return mav;
     }
 
+    @PostMapping("/adm/update")
+    public String updateUser(@Valid @ModelAttribute("editForm") ShortzUserDTO editFormUser, BindingResult result,
+                             @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idmap,
+                             Model model) {
 
+        Optional<ShortzUser> userFound = shortzUserService.findByUsername(idmap.get(editFormUser.getId()));
+
+        if (userFound.isEmpty()) {
+            idmap.clear();
+            return "redirect:" + MvcUriComponentsBuilder
+                    .fromMethodName(ShortzUserController.class,"adminPanel",null, null, null)
+                    .buildAndExpand().getPath();
+        }
+
+        if (editFormUser.getUsername() != null) {
+            final boolean isNotRenamingSameUser = !editFormUser.getUsername().equalsIgnoreCase(userFound.get().getUsername());
+
+            if (shortzUserService.existsByUsernameIgnoreCase(editFormUser.getUsername()) && isNotRenamingSameUser) {
+                result.rejectValue("username", "error.exists");
+            }
+        }
+
+        if (editFormUser.getEmail() != null) {
+            final boolean isNotChangingCurrentUserEmail = !editFormUser.getEmail().equalsIgnoreCase(userFound.get().getEmail());
+
+            if (shortzUserService.existsByEmailIgnoreCase(editFormUser.getEmail()) && isNotChangingCurrentUserEmail) {
+                result.rejectValue("email","error.exists");
+            }
+        }
+
+        if (result.hasErrors()) {
+            result.getModel().forEach(model::addAttribute);
+            model.addAttribute("allRoles", Role.values());
+            return "user/adm/edit";
+        }
+
+        shortzUserService.update(idmap.get(editFormUser.getId()), editFormUser);
+
+        idmap.clear();
+        return "redirect:" + MvcUriComponentsBuilder
+                .fromMethodName(ShortzUserController.class,"adminPanel",null, null, null)
+                .buildAndExpand().getPath();
+    }
 }

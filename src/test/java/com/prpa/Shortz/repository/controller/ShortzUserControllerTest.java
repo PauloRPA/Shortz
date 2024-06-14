@@ -245,4 +245,144 @@ public class ShortzUserControllerTest {
         verify(uuidToUsernameMapMock).clear();
     }
 
+    // POST adm edit panel
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostEditPageWithValidUser_shouldUpdateDBAndRedirectToAdminPanel() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        final ShortzUserDTO TEST_USER = testUserDTO;
+        String NEW_USERNAME = USER_USERNAME.repeat(2);
+
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        mockMvc.perform(post("/user/adm/update").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .param("username", NEW_USERNAME)
+                        .param("email", USER_EMAIL)
+                        .param("urlCount", String.valueOf(-1))
+                        .param("role", String.valueOf(Role.ADMIN))
+                        .param("enabled", String.valueOf(true)))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByEmailIgnoreCase(USER_EMAIL)).isPresent();
+        assertThat(shortzUserRepository.findByEmailIgnoreCase(USER_EMAIL).get().getUsername()).isEqualTo(NEW_USERNAME);
+    }
+
+    @CsvSource({
+            ",NotBlank",
+            "thisUsernameAlreadyExist,error.exists",
+            "a,Length"
+    })
+    @ParameterizedTest
+    @SneakyThrows @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostEditPageWithInvalidUsername_shouldReturnWithFieldErrors(String currentTestUsername, String errorcode) {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        final ShortzUserDTO TEST_USER = testUserDTO;
+        final ShortzUser userMock = mock(ShortzUser.class);
+
+        ShortzUser preExistentUser = ShortzUser.builder()
+                .username("thisUsernameAlreadyExist")
+                .email("yay@mail.com")
+                .password(passwordEncoder.encode(USER_PASSWORD))
+                .id(USER_ID + 1).urlCount(UNLIMITED_URL_COUNT)
+                .role(USER).enabled(true).build();
+
+        shortzUserRepository.save(testUser);
+        shortzUserRepository.save(preExistentUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        mockMvc.perform(post("/user/adm/update").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .param("username", currentTestUsername) //Empty username
+                        .param("email", USER_EMAIL)
+                        .param("urlCount", String.valueOf(-1))
+                        .param("role", String.valueOf(Role.ADMIN))
+                        .param("enabled", String.valueOf(true)))
+                .andExpect(model().attributeHasFieldErrors("editForm", "username" ))
+                .andExpect(model().attributeHasFieldErrorCode("editForm", "username", errorcode ))
+                .andExpect(status().isOk());
+    }
+
+    @CsvSource({
+            ",NotBlank",
+            "thisIsAMalformedEmail,Email",
+            "thisEmailAlready@exists.com,error.exists"
+    })
+    @ParameterizedTest
+    @SneakyThrows @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostEditPageWithInvalidEmail_shouldReturnWithFieldErrors(String currentTestEmail, String errorcode) {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        final ShortzUserDTO TEST_USER = testUserDTO;
+        final ShortzUser userMock = mock(ShortzUser.class);
+
+        ShortzUser preExistentUser = ShortzUser.builder()
+                .username("User")
+                .email("thisEmailAlready@exists.com")
+                .password(passwordEncoder.encode(USER_PASSWORD))
+                .id(USER_ID + 1).urlCount(UNLIMITED_URL_COUNT)
+                .role(USER).enabled(true).build();
+
+        shortzUserRepository.save(testUser);
+        shortzUserRepository.save(preExistentUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        mockMvc.perform(post("/user/adm/update").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .param("username", USER_USERNAME) //Empty username
+                        .param("email", currentTestEmail)
+                        .param("urlCount", String.valueOf(-1))
+                        .param("role", String.valueOf(Role.ADMIN))
+                        .param("enabled", String.valueOf(true)))
+                .andExpect(model().attributeHasFieldErrors("editForm", "email" ))
+                .andExpect(model().attributeHasFieldErrorCode("editForm", "email", errorcode ))
+                .andExpect(status().isOk());
+        verify(uuidToUsernameMapMock).clear();
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostEditPageAndTheUserDoesNotExist_shouldRedirectAdminPanel() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn("This user is not present on the DB");
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        mockMvc.perform(post("/user/adm/update").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .param("username", USER_USERNAME)
+                        .param("email", USER_EMAIL)
+                        .param("urlCount", String.valueOf(-1))
+                        .param("role", String.valueOf(Role.ADMIN))
+                        .param("enabled", String.valueOf(true)))
+                .andExpect(status().isFound());
+
+        verify(uuidToUsernameMapMock).clear();
+    }
 }
