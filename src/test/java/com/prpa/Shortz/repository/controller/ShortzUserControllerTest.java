@@ -1,10 +1,14 @@
 package com.prpa.Shortz.repository.controller;
 
 import com.prpa.Shortz.model.ShortzUser;
+import com.prpa.Shortz.model.dto.ShortzUserDTO;
+import com.prpa.Shortz.model.enums.Role;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,10 +16,18 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Map;
+import java.util.UUID;
 
 import static com.prpa.Shortz.model.ShortzUser.UNLIMITED_URL_COUNT;
 import static com.prpa.Shortz.model.enums.Role.USER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest @AutoConfigureMockMvc
 public class ShortzUserControllerTest {
 
+    public static final Long USER_ID = 2L;
     public static final String USER_PASSWORD = "123";
     public static final String USER_EMAIL = "test@user.com";
     public static final String USER_USERNAME = "testUser";
@@ -39,6 +52,7 @@ public class ShortzUserControllerTest {
     private PasswordEncoder passwordEncoder;
 
     private ShortzUser testUser;
+    private ShortzUserDTO testUserDTO;
 
     @BeforeEach
     public void setup() {
@@ -46,8 +60,16 @@ public class ShortzUserControllerTest {
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
                 .password(passwordEncoder.encode(USER_PASSWORD))
-                .id(2L).urlCount(UNLIMITED_URL_COUNT)
+                .id(USER_ID).urlCount(UNLIMITED_URL_COUNT)
                 .role(USER).enabled(true).build();
+
+        testUserDTO = ShortzUserDTO.builder()
+                .username(testUser.getUsername())
+                .email(testUser.getEmail())
+                .urlCount(testUser.getUrlCount())
+                .role(testUser.getRole())
+                .enabled(testUser.getEnabled())
+                .build();
     }
 
     @SneakyThrows @Test @WithAnonymousUser
@@ -66,6 +88,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithAnonymousUser
+    @DirtiesContext
     public void whenAnonymousPostLogin_shouldLoginAndRedirect() {
         shortzUserRepository.save(testUser);
         mockMvc.perform(post("/user/login").with(csrf())
@@ -128,6 +151,7 @@ public class ShortzUserControllerTest {
 
 
     @SneakyThrows @Test @WithAnonymousUser
+    @DirtiesContext
     public void whenUserTriesToRegisterWithPresentUsernameOrEmail_shouldFail() {
         shortzUserRepository.save(testUser);
         mockMvc.perform(post("/user/register").with(csrf())
@@ -159,5 +183,66 @@ public class ShortzUserControllerTest {
                 .andExpect(status().isFound());
     }
 
+    // GET adm edit panel
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    @DirtiesContext
+    public void whenUserGetEditPageWithValidUUID_shouldReturnEditPageOk() {
+        // Given
+        shortzUserRepository.save(testUser);
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        ModelAndView mav = mockMvc.perform(get("/user/adm/edit")
+                        .sessionAttr("uuidToUsernameMap", uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("editForm"))
+                .andExpect(status().isOk())
+                .andReturn().getModelAndView();
+
+        assertThat(mav).isNotNull();
+        assertThat(mav.getModel().get("editForm")).isEqualTo(testUserDTO);
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetEditPageWithMalformedIdArgument_shouldRedirectToAdminPanel() {
+        mockMvc.perform(get("/user/adm/edit")
+                        .param("id", "InvalidUUID")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound());
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetEditPageWithInvalidUUID_shouldRedirectToAdminPanel() {
+        mockMvc.perform(get("/user/adm/edit")
+                        .param("id", "88b4cb00-b54f-4ddd-9c89-60a2c3c2d955")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound());
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetEditPageForNonExistentUser_shouldRedirectToAdminPanel() {
+        // Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        // Then
+        mockMvc.perform(get("/user/adm/edit")
+                        .sessionAttr("uuidToUsernameMap", uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID))
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound());
+
+        verify(uuidToUsernameMapMock).clear();
+    }
 
 }

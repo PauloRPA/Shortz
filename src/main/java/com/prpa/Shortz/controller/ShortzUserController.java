@@ -2,6 +2,7 @@ package com.prpa.Shortz.controller;
 
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortzUserDTO;
+import com.prpa.Shortz.model.enums.Role;
 import com.prpa.Shortz.model.form.ShortzUserForm;
 import com.prpa.Shortz.service.ShortzUserService;
 import com.prpa.Shortz.util.ControllerUtils;
@@ -16,13 +17,13 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Controller
 @RequestMapping("/user")
+@SessionAttributes("uuidToUsernameMap")
 public class ShortzUserController {
 
     public static final int DEFAULT_PAGE_SIZE = 8;
@@ -33,6 +34,11 @@ public class ShortzUserController {
     @Autowired
     public ShortzUserController(ShortzUserService shortzUserService) {
         this.shortzUserService = shortzUserService;
+    }
+
+    @ModelAttribute("uuidToUsernameMap")
+    public Map<UUID, String> idMap() {
+        return new HashMap<>();
     }
 
     @GetMapping("/login")
@@ -88,10 +94,16 @@ public class ShortzUserController {
     }
 
     @GetMapping("/adm/admin_panel")
-    public String adminPanel(@RequestParam("p") Optional<Integer> pageParam, Model model){
+    public String adminPanel(@RequestParam("p") Optional<Integer> pageParam, Model model,
+                             @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idUsernameMap){
         final int page = pageParam.orElseGet(() -> 0);
         Page<ShortzUserDTO> users = shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
         model.addAttribute("userPage", users);
+
+        idUsernameMap.clear();
+        users.forEach(user -> {
+            idUsernameMap.put(user.getId(), user.getUsername());
+        });
 
         if (users.getTotalPages() > 1) {
             int currentPage = users.getNumber();
@@ -112,6 +124,45 @@ public class ShortzUserController {
         return shouldRedirect + "user/adm/admin_panel";
     }
 
+    @GetMapping("/adm/edit")
+    public ModelAndView editUser(@RequestParam("id") UUID userUUID,
+                                 @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
+                                 ModelAndView mav) {
+
+        final UriComponents adminPanelUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortzUserController.class, "adminPanel", null, null, null)
+                .buildAndExpand();
+
+
+        if (!uuidUsernameMap.containsKey(userUUID)) {
+            uuidUsernameMap.clear();
+            mav.setViewName("redirect:" + adminPanelUri);
+            return mav;
+        }
+
+        Optional<ShortzUser> userFound = shortzUserService.findByUsername(uuidUsernameMap.get(userUUID));
+        if (userFound.isEmpty()) {
+            uuidUsernameMap.clear();
+            mav.setViewName("redirect:" + adminPanelUri);
+            return mav;
+        }
+
+        ShortzUser user = userFound.get();
+        ShortzUserDTO form = ShortzUserDTO.builder()
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .urlCount(user.getUrlCount())
+                .role(user.getRole())
+                .enabled(user.getEnabled())
+                .id(userUUID)
+                .build();
+
+        mav.getModel().put("editForm", form);
+        mav.getModel().put("allRoles", Role.values());
+        mav.setViewName("user/adm/edit");
+
+        return mav;
+    }
 
 
 }

@@ -1,33 +1,36 @@
 package com.prpa.Shortz.model.dto;
 
 import com.prpa.Shortz.model.enums.Role;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import java.util.UUID;
 
-@Data
+@Data @Builder
 @AllArgsConstructor @NoArgsConstructor
+@EqualsAndHashCode
 public class ShortzUserDTO {
 
+    @EqualsAndHashCode.Exclude
     private UUID id;
 
-    @Length(min = 3, message = "Length must be at least of 3")
-    @NotBlank(message = "{0} must not be blank")
+    @Length(min = 3)
+    @NotBlank
     private String username;
 
     @Email
-    @NotBlank(message = "{0} must not be blank")
+    @NotBlank
     private String email;
 
-    private Integer urlCount;
+    @Min(value = -1)
+    @Max(value = 1_000_000)
+    @NotNull(message = "{0} must not be null")
+    private int urlCount;
 
+    @NotNull(message = "{0} must not be null")
     private Role role;
 
-    private Boolean enabled;
+    private boolean enabled;
 
 }

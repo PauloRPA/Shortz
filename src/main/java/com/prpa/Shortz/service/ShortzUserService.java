@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ShortzUserService implements UserDetailsService {
@@ -62,6 +63,7 @@ public class ShortzUserService implements UserDetailsService {
         Page<ShortzUser> users =  shortzUserRepository.findAll(Pageable.ofSize(pageSize).withPage(page));
         return users.map(user -> {
             ShortzUserDTO shortzUserDTO = new ShortzUserDTO();
+            shortzUserDTO.setId(UUID.randomUUID());
             shortzUserDTO.setUsername(user.getUsername());
             shortzUserDTO.setEmail(user.getEmail());
             shortzUserDTO.setRole(user.getRole());
@@ -77,5 +79,27 @@ public class ShortzUserService implements UserDetailsService {
 
     public boolean existsByUsernameIgnoreCase(String username) {
         return shortzUserRepository.existsByUsernameIgnoreCase(username);
+    }
+
+    public Optional<ShortzUser> findByUsername(String username) {
+        return shortzUserRepository.findByUsernameIgnoreCase(username);
+    }
+
+    public void update(String id, ShortzUserDTO newInfo) {
+        Optional<ShortzUser> userById = shortzUserRepository.findByUsernameIgnoreCase(id);
+        if (userById.isEmpty()) return;
+
+        ShortzUser user = userById.get();
+        user.setUsername(newInfo.getUsername());
+        user.setEmail(newInfo.getEmail());
+        user.setUrlCount(newInfo.getUrlCount());
+        user.setRole(newInfo.getRole());
+        user.setEnabled(newInfo.isEnabled());
+
+        shortzUserRepository.save(user);
+    }
+
+    public Optional<ShortzUser> findById(Long id) {
+        return shortzUserRepository.findById(id);
     }
 }
