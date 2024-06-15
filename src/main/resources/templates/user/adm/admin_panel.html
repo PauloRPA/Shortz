@@ -25,6 +25,7 @@
                 <th scope="col">ROLE</th>
                 <th scope="col">ENABLED</th>
                 <th scope="col">Edit</th>
+                <th scope="col">Remove</th>
             </tr>
             <tr class="text-center" th:each="user : ${userPage}">
                 <td>
@@ -45,13 +46,44 @@
                 </td>
                 <td class="text-center">
                     <form method="get" th:action="@{/user/adm/edit}">
-                        <input type="hidden" name="id" id="id" autocomplete="off" th:value="${user.id}">
+                        <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
                         <button class="btn btn-primary" type="submit">
                             <i class="fas fa-edit"></i>
                         </button>
                     </form>
                 </td>
+                <td class="text-center">
+                    <button class="btn btn-danger" type="button" data-bs-toggle="modal"
+                        th:attr="data-bs-target=|#${user.id}|">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
 
+                    <div class="modal fade" th:attr="id=${user.id}" tabIndex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content bg-dark text-white">
+                                <div class="modal-header bg-danger">
+                                    <span class="text-white fs-5 fw-bold">Delete</span>
+                                    <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body"> <!-- On going experiment -->
+                                    Tem certeza que deseja remover
+                                    <span class="fw-bold" th:text="${user.username}">
+                                    </span>
+                                    ?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" data-bs-dismiss="modal"
+                                        class="btn btn-secondary">Close</button>
+
+                                    <form method="post" action="/user/adm/delete" th:action="@{/user/adm/delete}">
+                                        <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
             </tr>
         </table>
 
