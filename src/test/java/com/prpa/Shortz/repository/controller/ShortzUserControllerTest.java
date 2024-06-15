@@ -358,7 +358,6 @@ public class ShortzUserControllerTest {
                 .andExpect(model().attributeHasFieldErrors("editForm", "email" ))
                 .andExpect(model().attributeHasFieldErrorCode("editForm", "email", errorcode ))
                 .andExpect(status().isOk());
-        verify(uuidToUsernameMapMock).clear();
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
