@@ -15,6 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 
 import java.util.*;
@@ -73,10 +74,6 @@ public class ShortzUserController {
         }
 
         if (result.hasErrors()) {
-            UriComponents registerNewUserUri = MvcUriComponentsBuilder
-                    .fromMethodName(ShortzUserController.class, "registerNewUser", form, result)
-                    .buildAndExpand();
-
             result.getModel().forEach(mav.getModel()::put);
             mav.getModel().put("userForm", form);
             mav.setViewName("user/register");
@@ -207,4 +204,36 @@ public class ShortzUserController {
                 .fromMethodName(ShortzUserController.class,"adminPanel",null, null, null)
                 .buildAndExpand().getPath();
     }
+
+    @PostMapping("/adm/delete")
+    public ModelAndView deleteUser(@RequestParam("id") UUID userUUID,
+                                   @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
+                                   ModelAndView mav,
+                                   RedirectAttributes redirectAttributes) {
+
+        final UriComponents adminPanelUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortzUserController.class, "adminPanel", null, null, null)
+                .buildAndExpand();
+
+        if (!uuidUsernameMap.containsKey(userUUID)) {
+            uuidUsernameMap.clear();
+            mav.setViewName("redirect:" + adminPanelUri);
+            return mav;
+        }
+
+        Optional<ShortzUser> userFound = shortzUserService.findByUsername(uuidUsernameMap.get(userUUID));
+        if (userFound.isEmpty()) {
+            uuidUsernameMap.clear();
+            mav.setViewName("redirect:" + adminPanelUri);
+            redirectAttributes.addFlashAttribute("deleted", false);
+            return mav;
+        }
+
+        boolean isDeleted = shortzUserService.deleteByUsername(uuidUsernameMap.get(userUUID));
+        redirectAttributes.addFlashAttribute("deleted", isDeleted);
+        mav.setViewName("redirect:" + adminPanelUri);
+        return mav;
+    }
+
+
 }

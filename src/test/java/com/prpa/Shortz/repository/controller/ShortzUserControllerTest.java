@@ -286,8 +286,6 @@ public class ShortzUserControllerTest {
     public void whenUserPostEditPageWithInvalidUsername_shouldReturnWithFieldErrors(String currentTestUsername, String errorcode) {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        final ShortzUserDTO TEST_USER = testUserDTO;
-        final ShortzUser userMock = mock(ShortzUser.class);
 
         ShortzUser preExistentUser = ShortzUser.builder()
                 .username("thisUsernameAlreadyExist")
@@ -328,8 +326,6 @@ public class ShortzUserControllerTest {
     public void whenUserPostEditPageWithInvalidEmail_shouldReturnWithFieldErrors(String currentTestEmail, String errorcode) {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        final ShortzUserDTO TEST_USER = testUserDTO;
-        final ShortzUser userMock = mock(ShortzUser.class);
 
         ShortzUser preExistentUser = ShortzUser.builder()
                 .username("User")
@@ -384,4 +380,94 @@ public class ShortzUserControllerTest {
 
         verify(uuidToUsernameMapMock).clear();
     }
+
+    // Post adm delete
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostDelete_shouldRemoveSpecifiedUser() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+
+        // Then
+        mockMvc.perform(post("/user/adm/delete").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isEmpty();
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectAdminPanel() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(false);
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+
+        // Then
+        mockMvc.perform(post("/user/adm/delete").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostDeleteNonexistentUser_shouldRedirectAdminPanel() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(TEST_UUID)).thenReturn("ThisUserDoesNotExist");
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+
+        // Then
+        mockMvc.perform(post("/user/adm/delete").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectAdminPanel() {
+        //Given
+        final String MALFORMED_UUID = "thisIsAMalformedUUID";
+        shortzUserRepository.save(testUser);
+
+        // When
+        final var uuidToUsernameMapMock = mock(Map.class);
+        when(uuidToUsernameMapMock.get(MALFORMED_UUID)).thenReturn(USER_USERNAME);
+        when(uuidToUsernameMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+
+        // Then
+        mockMvc.perform(post("/user/adm/delete").with(csrf())
+                        .sessionAttr("uuidToUsernameMap" ,uuidToUsernameMapMock)
+                        .param("id", MALFORMED_UUID))
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
+    }
+
 }

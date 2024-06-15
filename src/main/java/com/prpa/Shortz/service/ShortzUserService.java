@@ -102,4 +102,11 @@ public class ShortzUserService implements UserDetailsService {
     public Optional<ShortzUser> findById(Long id) {
         return shortzUserRepository.findById(id);
     }
+
+    public boolean deleteByUsername(String username) {
+        Optional<ShortzUser> userFound = shortzUserRepository.findByUsernameIgnoreCase(username);
+        if (userFound.isEmpty()) return false;
+        shortzUserRepository.deleteById(userFound.get().getId());
+        return true;
+    }
 }
