@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
@@ -21,6 +22,8 @@ import org.springframework.web.util.UriComponents;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static java.util.Objects.requireNonNullElse;
 
 @Controller
 @RequestMapping("/user")
@@ -38,32 +41,33 @@ public class ShortzUserController {
     }
 
     @ModelAttribute("uuidToUsernameMap")
-    public Map<UUID, String> idMap() {
+    public Map<UUID, String> uuidToUsernameMap() {
         return new HashMap<>();
     }
 
     @GetMapping("/login")
-    public String login(){
+    public String getLogin(){
         return "user/login";
     }
 
     @GetMapping("/register")
-    public String register(Model model){
+    public String getRegister(Model model){
         model.addAttribute("userForm", new ShortzUserForm());
         return "user/register";
     }
 
     @PostMapping("/register")
-    public ModelAndView registerNewUser(@Valid @ModelAttribute("userForm") ShortzUserForm form,
-                                        BindingResult result) {
+    public ModelAndView postNewUser(@Valid @ModelAttribute("userForm") ShortzUserForm form,
+                                    BindingResult result) {
         ModelAndView mav = new ModelAndView();
 
-        result.getGlobalErrors().stream()
-                .forEach(globalFieldMatchError -> {
-                    String field = ControllerUtils.globalErrorToFieldByMessage(globalFieldMatchError, "match");
-                    if (!field.isBlank())
-                        result.rejectValue(field, globalFieldMatchError.getDefaultMessage(), "The fields must match.");
-                });
+        for (ObjectError globalFieldMatchError : result.getGlobalErrors()) {
+            String field = ControllerUtils.globalErrorToFieldByMessage(globalFieldMatchError, "match");
+            if (!field.isBlank()) {
+                String message = requireNonNullElse(globalFieldMatchError.getDefaultMessage(), "");
+                result.rejectValue(field, message, "The fields must match.");
+            }
+        }
 
         if (shortzUserService.existsByUsernameIgnoreCase(form.getUsername())) {
             result.rejectValue("username", "error.exists");
@@ -90,9 +94,9 @@ public class ShortzUserController {
         return mav;
     }
 
-    @GetMapping("/adm/admin_panel")
-    public String adminPanel(@RequestParam("p") Optional<Integer> pageParam, Model model,
-                             @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idUsernameMap){
+    @GetMapping("/adm")
+    public String getUserManagement(@RequestParam("p") Optional<Integer> pageParam, Model model,
+                                    @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idUsernameMap){
         final int page = pageParam.orElseGet(() -> 0);
         Page<ShortzUserDTO> users = shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
         model.addAttribute("userPage", users);
@@ -118,29 +122,28 @@ public class ShortzUserController {
         }
 
         String shouldRedirect = users.getNumberOfElements() == 0 ? "redirect:/" : "";
-        return shouldRedirect + "user/adm/admin_panel";
+        return shouldRedirect + "user/adm" + (shouldRedirect.isBlank()? "/user_management":"" );
     }
 
     @GetMapping("/adm/edit")
-    public ModelAndView editUser(@RequestParam("id") UUID userUUID,
-                                 @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
-                                 ModelAndView mav) {
+    public ModelAndView getEditUserForm(@RequestParam("id") UUID userUUID,
+                                        @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
+                                        ModelAndView mav) {
 
-        final UriComponents adminPanelUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortzUserController.class, "adminPanel", null, null, null)
+        final UriComponents userManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortzUserController.class, "getUserManagement", null, null, null)
                 .buildAndExpand();
-
 
         if (!uuidUsernameMap.containsKey(userUUID)) {
             uuidUsernameMap.clear();
-            mav.setViewName("redirect:" + adminPanelUri);
+            mav.setViewName("redirect:" + userManagementUri);
             return mav;
         }
 
         Optional<ShortzUser> userFound = shortzUserService.findByUsername(uuidUsernameMap.get(userUUID));
         if (userFound.isEmpty()) {
             uuidUsernameMap.clear();
-            mav.setViewName("redirect:" + adminPanelUri);
+            mav.setViewName("redirect:" + userManagementUri);
             return mav;
         }
 
@@ -162,16 +165,16 @@ public class ShortzUserController {
     }
 
     @PostMapping("/adm/update")
-    public String updateUser(@Valid @ModelAttribute("editForm") ShortzUserDTO editFormUser, BindingResult result,
-                             @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idmap,
-                             Model model) {
+    public String postUpdateUser(@Valid @ModelAttribute("editForm") ShortzUserDTO editFormUser, BindingResult result,
+                                 @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idmap,
+                                 Model model) {
 
         Optional<ShortzUser> userFound = shortzUserService.findByUsername(idmap.get(editFormUser.getId()));
 
         if (userFound.isEmpty()) {
             idmap.clear();
             return "redirect:" + MvcUriComponentsBuilder
-                    .fromMethodName(ShortzUserController.class,"adminPanel",null, null, null)
+                    .fromMethodName(ShortzUserController.class,"getUserManagement",null, null, null)
                     .buildAndExpand().getPath();
         }
 
@@ -201,37 +204,37 @@ public class ShortzUserController {
 
         idmap.clear();
         return "redirect:" + MvcUriComponentsBuilder
-                .fromMethodName(ShortzUserController.class,"adminPanel",null, null, null)
+                .fromMethodName(ShortzUserController.class,"getUserManagement",null, null, null)
                 .buildAndExpand().getPath();
     }
 
     @PostMapping("/adm/delete")
-    public ModelAndView deleteUser(@RequestParam("id") UUID userUUID,
-                                   @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
-                                   ModelAndView mav,
-                                   RedirectAttributes redirectAttributes) {
+    public ModelAndView postDeleteUser(@RequestParam("id") UUID userUUID,
+                                       @ModelAttribute("uuidToUsernameMap") Map<UUID, String> uuidUsernameMap,
+                                       ModelAndView mav,
+                                       RedirectAttributes redirectAttributes) {
 
-        final UriComponents adminPanelUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortzUserController.class, "adminPanel", null, null, null)
+        final UriComponents userManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortzUserController.class, "getUserManagement", null, null, null)
                 .buildAndExpand();
 
         if (!uuidUsernameMap.containsKey(userUUID)) {
             uuidUsernameMap.clear();
-            mav.setViewName("redirect:" + adminPanelUri);
+            mav.setViewName("redirect:" + userManagementUri);
             return mav;
         }
 
         Optional<ShortzUser> userFound = shortzUserService.findByUsername(uuidUsernameMap.get(userUUID));
         if (userFound.isEmpty()) {
             uuidUsernameMap.clear();
-            mav.setViewName("redirect:" + adminPanelUri);
+            mav.setViewName("redirect:" + userManagementUri);
             redirectAttributes.addFlashAttribute("deleted", false);
             return mav;
         }
 
         boolean isDeleted = shortzUserService.deleteByUsername(uuidUsernameMap.get(userUUID));
         redirectAttributes.addFlashAttribute("deleted", isDeleted);
-        mav.setViewName("redirect:" + adminPanelUri);
+        mav.setViewName("redirect:" + userManagementUri);
         return mav;
     }
 

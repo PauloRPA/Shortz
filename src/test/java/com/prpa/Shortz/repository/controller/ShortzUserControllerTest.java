@@ -167,17 +167,17 @@ public class ShortzUserControllerTest {
 
     // GET ADM_PANEL
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
-    public void whenUserGetAdminPanel_shouldSucceed() {
-        mockMvc.perform(get("/user/adm/admin_panel")
+    public void whenUserGetUserManagement_shouldSucceed() {
+        mockMvc.perform(get("/user/adm")
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(model().attributeExists("userPage"))
                 .andExpect(status().isOk());
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
-    public void whenUserGetAdminPanelWithNonexistentPage_shouldRedirectToP0() {
+    public void whenUserGetUserManagementWithNonexistentPage_shouldRedirectToP0() {
         String PAGE_THAT_DOESNT_EXIST = "999";
-        mockMvc.perform(get("/user/adm/admin_panel")
+        mockMvc.perform(get("/user/adm")
                         .param("p", PAGE_THAT_DOESNT_EXIST)
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isFound());
@@ -210,7 +210,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
-    public void whenUserGetEditPageWithMalformedIdArgument_shouldRedirectToAdminPanel() {
+    public void whenUserGetEditPageWithMalformedIdArgument_shouldRedirectToGetUserManagement() {
         mockMvc.perform(get("/user/adm/edit")
                         .param("id", "InvalidUUID")
                         .accept(MediaType.TEXT_HTML))
@@ -218,7 +218,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
-    public void whenUserGetEditPageWithInvalidUUID_shouldRedirectToAdminPanel() {
+    public void whenUserGetEditPageWithInvalidUUID_shouldRedirectToGetUserManagement() {
         mockMvc.perform(get("/user/adm/edit")
                         .param("id", "88b4cb00-b54f-4ddd-9c89-60a2c3c2d955")
                         .accept(MediaType.TEXT_HTML))
@@ -226,7 +226,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
-    public void whenUserGetEditPageForNonExistentUser_shouldRedirectToAdminPanel() {
+    public void whenUserGetEditPageForNonExistentUser_shouldRedirectToGetUserManagement() {
         // Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
@@ -247,7 +247,7 @@ public class ShortzUserControllerTest {
 
     // POST adm edit panel
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
-    public void whenUserPostEditPageWithValidUser_shouldUpdateDBAndRedirectToAdminPanel() {
+    public void whenUserPostEditPageWithValidUser_shouldUpdateDBAndRedirectToGetUserManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final ShortzUserDTO TEST_USER = testUserDTO;
@@ -357,7 +357,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
-    public void whenUserPostEditPageAndTheUserDoesNotExist_shouldRedirectAdminPanel() {
+    public void whenUserPostEditPageAndTheUserDoesNotExist_shouldRedirectGetUserManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         shortzUserRepository.save(testUser);
@@ -405,7 +405,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
-    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectAdminPanel() {
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUserManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         shortzUserRepository.save(testUser);
@@ -427,7 +427,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
-    public void whenUserPostDeleteNonexistentUser_shouldRedirectAdminPanel() {
+    public void whenUserPostDeleteNonexistentUser_shouldRedirectGetUserManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         shortzUserRepository.save(testUser);
@@ -449,7 +449,7 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN") @DirtiesContext
-    public void whenUserPostDeleteMalformedUUID_shouldRedirectAdminPanel() {
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUserManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
         shortzUserRepository.save(testUser);

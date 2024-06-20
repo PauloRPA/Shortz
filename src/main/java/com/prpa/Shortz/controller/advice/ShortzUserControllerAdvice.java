@@ -13,7 +13,7 @@ public class ShortzUserControllerAdvice {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public String handleInvalidMethodArgument() {
         final UriComponents adminPanelUri = MvcUriComponentsBuilder
-            .fromMethodName(ShortzUserController.class, "adminPanel", null, null, null)
+            .fromMethodName(ShortzUserController.class, "getUserManagement", null, null, null)
             .buildAndExpand();
         return "redirect:" + adminPanelUri;
     }
