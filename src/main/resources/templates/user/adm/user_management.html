@@ -23,7 +23,10 @@
 
     <!-- Main table -->
     <div class="container rounded">
-        <table class="table table-dark rounded m-1">
+        <div class="mt-5" th:if="${userPage.numberOfElements} == 0">
+            <h2 class="text-white text-center bg-dark rounded lh-lg" th:text="#{empty.users}"></h2>
+        </div>
+        <table th:if="${userPage.numberOfElements} != 0" class="table table-dark rounded m-1">
             <tr class="text-center">
                 <th scope="col">USERNAME</th>
                 <th scope="col">EMAIL</th>

@@ -121,8 +121,7 @@ public class ShortzUserController {
             model.addAttribute("pagination", pagination);
         }
 
-        String shouldRedirect = users.getNumberOfElements() == 0 ? "redirect:/" : "";
-        return shouldRedirect + "user/adm" + (shouldRedirect.isBlank()? "/user_management":"" );
+        return "user/adm/user_management";
     }
 
     @GetMapping("/adm/edit")

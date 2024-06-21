@@ -1,4 +1,4 @@
-package com.prpa.Shortz.repository.controller;
+package com.prpa.Shortz.integration.controller;
 
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortzUserDTO;
@@ -186,6 +186,16 @@ public class ShortzUserControllerTest {
     // GET ADM_PANEL
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
     public void whenUserGetUserManagement_shouldSucceed() {
+        mockMvc.perform(get("/user/adm")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("userPage"))
+                .andExpect(status().isOk());
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetUserManagementWithNoUsers_shouldSucceed() {
+        shortzUserRepository.deleteAll();
+        
         mockMvc.perform(get("/user/adm")
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(model().attributeExists("userPage"))
