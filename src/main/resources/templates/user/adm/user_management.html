@@ -15,12 +15,11 @@
     <div th:replace="fragments/header :: navigation">
     </div>
 
-    <div th:if="${deleted}"
-        class="alert alert-success alert-dismissible fade show w-10 position-fixed bottom-0 end-0 m-2" role="alert">
-        Usuario removido com sucesso!
+    <div th:if="${message}"
+         class="alert alert-dismissible fade show w-10 position-fixed bottom-0 end-0 m-2" th:classappend="|alert-${messageType?: 'info'}|" role="alert">
+        <span th:text="#{${message}}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-
     <!-- Main table -->
     <div class="container rounded">
         <div class="mt-5" th:if="${userPage.numberOfElements} == 0">

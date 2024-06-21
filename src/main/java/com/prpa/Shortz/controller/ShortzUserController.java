@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.prpa.Shortz.model.enums.Role.ADMIN;
 import static java.util.Objects.requireNonNullElse;
 
 @Controller
@@ -227,12 +228,23 @@ public class ShortzUserController {
         if (userFound.isEmpty()) {
             uuidUsernameMap.clear();
             mav.setViewName("redirect:" + userManagementUri);
-            redirectAttributes.addFlashAttribute("deleted", false);
+            redirectAttributes.addFlashAttribute("message", false);
+            return mav;
+        }
+
+        final boolean isLastAdmin = userFound.get().getRole().equals(ADMIN) &&
+                shortzUserService.countUsersByRole(ADMIN) == 1;
+
+        if (isLastAdmin) {
+            redirectAttributes.addFlashAttribute("message", "error.delete.admin");
+            redirectAttributes.addFlashAttribute("messageType", "danger");
+            mav.setViewName("redirect:" + userManagementUri);
             return mav;
         }
 
         boolean isDeleted = shortzUserService.deleteByUsername(uuidUsernameMap.get(userUUID));
-        redirectAttributes.addFlashAttribute("deleted", isDeleted);
+        redirectAttributes.addFlashAttribute("message", "user.deleted");
+        redirectAttributes.addFlashAttribute("messageType", "success");
         mav.setViewName("redirect:" + userManagementUri);
         return mav;
     }

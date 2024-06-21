@@ -109,4 +109,9 @@ public class ShortzUserService implements UserDetailsService {
         shortzUserRepository.deleteById(userFound.get().getId());
         return true;
     }
+
+    public Integer countUsersByRole(Role role) {
+        return shortzUserRepository.countByRole(role);
+    }
+
 }
