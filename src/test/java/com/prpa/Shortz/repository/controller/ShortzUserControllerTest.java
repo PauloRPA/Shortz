@@ -135,6 +135,24 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithAnonymousUser
+    public void whenAnonymousUserTriesToRegisterWithSpacedUsername_shouldTrimAndSuccess() {
+        String usernameWithSpace = "   newuser   ";
+
+        mockMvc.perform(post("/user/register").with(csrf())
+                        .accept("text/html")
+                        .param("username", usernameWithSpace)
+                        .param("email", "newuser@email.com")
+                        .param("password", "newuserpasswd")
+                        .param("confirmPassword", "newuserpasswd"))
+                .andExpect(redirectedUrl("/"))
+                .andExpect(status().isFound());
+
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(usernameWithSpace.trim())).isPresent();
+        assertThat(shortzUserRepository.findByUsernameIgnoreCase(usernameWithSpace)).isEmpty();
+    }
+
+
+    @SneakyThrows @Test @WithAnonymousUser
     public void whenUserTriesToRegisterWithInvalidParams_shouldFail() {
         mockMvc.perform(post("/user/register").with(csrf())
                         .accept("text/html")

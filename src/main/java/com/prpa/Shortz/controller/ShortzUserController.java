@@ -85,9 +85,9 @@ public class ShortzUserController {
         }
 
         ShortzUser newUser = new ShortzUser();
-        newUser.setUsername(form.getUsername());
+        newUser.setUsername(form.getUsername().trim());
         newUser.setPassword(form.getPassword());
-        newUser.setEmail(form.getEmail());
+        newUser.setEmail(form.getEmail().trim());
         shortzUserService.save(newUser);
 
         mav.setViewName("redirect:/");
