@@ -244,6 +244,13 @@ public class ShortzUserControllerTest {
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
+    public void whenUserGetEditPageWithNoUUID_shouldRedirectToGetUserManagement() {
+        mockMvc.perform(get("/user/adm/edit")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound());
+    }
+
+    @SneakyThrows @Test @WithMockUser(roles = "ADMIN")
     public void whenUserGetEditPageForNonExistentUser_shouldRedirectToGetUserManagement() {
         // Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
