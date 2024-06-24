@@ -5,100 +5,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin panel</title>
-    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet" />
     <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}" defer></script>
     <link th:href="@{/webjars/font-awesome/6.5.2/css/all.min.css}" rel="stylesheet" />
+
 </head>
 
 <body class="bg-secondary">
 
-    <div th:replace="fragments/header :: navigation">
-    </div>
+    <!-- Navigation -->
+    <div th:replace="fragments/header :: navigation"></div>
 
-    <div th:if="${message}"
-         class="alert alert-dismissible fade show w-10 position-fixed bottom-0 end-0 m-2" th:classappend="|alert-${messageType?: 'info'}|" role="alert">
+    <div th:if="${message}" class="alert alert-dismissible fade show w-10 position-fixed bottom-0 end-0 m-2"
+        th:classappend="|alert-${messageType?: 'info'}|" role="alert">
         <span th:text="#{${message}}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <!-- Main table -->
-    <div class="container rounded">
+
+    <div class="container">
+        <!-- No users message -->
         <div class="mt-5" th:if="${userPage.numberOfElements} == 0">
             <h2 class="text-white text-center bg-dark rounded lh-lg" th:text="#{empty.users}"></h2>
         </div>
-        <table th:if="${userPage.numberOfElements} != 0" class="table table-dark rounded m-1">
-            <tr class="text-center">
-                <th scope="col">USERNAME</th>
-                <th scope="col">EMAIL</th>
-                <th scope="col">URL LIMIT</th>
-                <th scope="col">ROLE</th>
-                <th scope="col">ENABLED</th>
-                <th scope="col">Edit</th>
-                <th scope="col">Remove</th>
-            </tr>
-            <tr class="text-center" th:each="user : ${userPage}">
-                <td>
-                    <p class="" th:text="${user.username}">username</p>
-                </td>
-                <td>
-                    <p class="" th:text="${user.email}">email</p>
-                </td>
-                <td>
-                    <p class="" th:text="${user.urlCount} == -1? Unlimited: ${user.urlCount}">INFINITE</p>
-                </td>
-                <td>
-                    <p class="" th:text="${user.role}">ADMIN</p>
-                </td>
-                <td class="text-center">
-                    <button class="btn" th:classappend="${user.enabled}? btn-primary : btn-outline-primary"
-                        th:text="${user.enabled}? Enabled : Disabled" disabled>-disabled-</button>
-                </td>
-                <td class="text-center">
-                    <form method="get" th:action="@{/user/adm/edit}">
-                        <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="fas fa-edit"></i>
+
+        <!-- Main table -->
+        <table th:if="${userPage.numberOfElements} != 0" class="table table-dark table-striped mt-3">
+
+            <!-- Table header -->
+            <thead class="">
+                <tr class="text-center">
+                    <th th:text="#{ui.user.username}" class="text-uppercase" scope="col">USERNAME</th>
+                    <th th:text="#{ui.user.email}" class="text-uppercase d-md-table-cell d-none" scope="col">EMAIL </th>
+                    <th th:text="#{ui.user.urllimit}" class="text-uppercase d-md-table-cell d-none" scope="col">URL
+                        LIMIT</th>
+                    <th th:text="#{ui.user.role}" class="text-uppercase d-md-table-cell d-none" scope="col">ROLE </th>
+                    <th th:text="#{ui.user.enabled}" class="text-uppercase d-md-table-cell d-none" scope="col">ENABLED
+                    </th>
+                    <th th:text="#{ui.user.edit}" class="text-uppercase" scope="col">Edit</th>
+                    <th th:text="#{ui.user.remove}" class="text-uppercase" scope="col">Remove</th>
+                </tr>
+            </thead>
+
+            <tbody class="table-group-divider">
+
+                <!-- User tuple -->
+                <tr class="text-center" th:each="user : ${userPage}">
+
+                    <!-- Begin user data -->
+                    <td>
+                        <p th:text="${user.username}">username</p>
+                    </td>
+                    <td class="d-md-table-cell d-none">
+                        <p th:text="${user.email}">email</p>
+                    </td>
+                    <td class="d-md-table-cell d-none">
+                        <p th:text="${user.urlCount} == -1? #{ui.user.urllimit.unlimited}: ${user.urlCount}">Unlimited
+                        </p>
+                    </td>
+                    <td class="d-md-table-cell d-none">
+                        <p th:text="${user.role}">ADMIN</p>
+                    </td>
+                    <td class="text-center d-md-table-cell d-none">
+                        <button class="btn" th:classappend="${user.enabled}? btn-primary : btn-outline-primary"
+                            th:text="${user.enabled}? #{ui.user.enabled.on} : #{ui.user.enabled.off}"
+                            disabled>-disabled-</button>
+                    </td>
+                    <!-- End user data -->
+
+                    <!-- Edit button -->
+                    <td class="text-center">
+                        <form method="get" th:action="@{/user/adm/edit}">
+                            <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </form>
+                    </td>
+
+                    <!-- Delete button -->
+                    <td class="text-center">
+                        <button class="btn btn-danger" type="button" data-bs-toggle="modal"
+                            th:attr="data-bs-target=|#${user.id}|">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
-                    </form>
-                </td>
-                <td class="text-center">
-                    <button class="btn btn-danger" type="button" data-bs-toggle="modal"
-                        th:attr="data-bs-target=|#${user.id}|">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
 
-                    <div class="modal fade" th:attr="id=${user.id}" tabIndex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content bg-dark text-white">
-                                <div class="modal-header bg-danger">
-                                    <span class="text-white fs-5 fw-bold">Delete</span>
-                                    <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body"> <!-- On going experiment -->
-                                    Tem certeza que deseja remover
-                                    <span class="fw-bold" th:text="${user.username}">
-                                    </span>
-                                    ?
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" data-bs-dismiss="modal"
-                                        class="btn btn-secondary">Close</button>
+                        <!-- User deletion modal -->
+                        <div class="modal fade" th:attr="id=${user.id}" tabIndex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content bg-dark text-white">
+                                    <div class="modal-header bg-danger">
+                                        <span class="text-white fs-5 fw-bold">Delete</span>
+                                        <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Tem certeza que deseja remover
+                                        <span class="fw-bold" th:text="${user.username}">
+                                        </span>
+                                        ?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" data-bs-dismiss="modal"
+                                            class="btn btn-secondary">Close</button>
 
-                                    <form method="post" action="/user/adm/delete" th:action="@{/user/adm/delete}">
-                                        <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
-                                        <button type="submit" class="btn btn-danger">Delete</button>
-                                    </form>
+                                        <form method="post" action="/user/adm/delete" th:action="@{/user/adm/delete}">
+                                            <input type="hidden" name="id" autocomplete="off" th:value="${user.id}">
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </td>
-            </tr>
+                    </td>
+                </tr>
+            </tbody>
+
         </table>
 
         <!-- Pagination -->
-        <nav th:if="${userPage.totalPages > 1}">
+        <nav class="mt-3" th:if="${userPage.totalPages > 1}">
             <ol class="pagination justify-content-center">
 
+                <!-- Previous button -->
                 <li th:if="${!userPage.isFirst}" class="page-item">
                     <a href="#" th:href="@{${url}(p=${userPage.number - 1})}"
                         class="page-link border-0 text-white bg-dark">
@@ -108,11 +137,13 @@
                     </a>
                 </li>
 
+                <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
                     <a th:href="@{${url}(p=${page})}" th:text="${page + 1}" class="page-link border-0"
                         th:classappend="${page == userPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
+                <!-- Next button -->
                 <li th:if="${!userPage.isLast}" class="page-item">
                     <a href="#" th:href="@{${url}(p=${userPage.number + 1})}"
                         class="page-link border-0 text-white bg-dark">
