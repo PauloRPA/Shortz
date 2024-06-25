@@ -102,6 +102,10 @@ public class ShortzUserController {
         Page<ShortzUserDTO> users = shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
         model.addAttribute("userPage", users);
 
+        if (users.getTotalPages() > 0 && page > users.getTotalPages()) {
+            return "redirect:/user/adm";
+        }
+
         idUsernameMap.clear();
         users.forEach(user -> {
             idUsernameMap.put(user.getId(), user.getUsername());
