@@ -9,34 +9,55 @@
     <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}" defer></script>
 </head>
 
-<body style="background-color:#ddd">
+<body class="bg-secondary">
 
-    <div class="container flex">
-        <div class="d-flex justify-content-center align-items-center flex-column mt-5">
-            <div
-                class="border border-secondary border-bottom-0 bg-secondary w-25 d-flex justify-content align-items-center flex-column p-2 rounded-top">
-                <img class="d-inline" style="width:40px" th:src="@{/images/shortz_icon.png}" alt="shortz">
-            </div>
-            <form th:action="@{/user/login}" method="post" class="w-25 form border border-secondary border-radius-3 rounded-bottom p-4">
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input class="form-control" type="text" name="username" placeholder="Username" id="username">
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input class="form-control" type="password"
-                        name="password" placeholder="Password" id="password">
-                </div>
-                <div class="mb-3 ">
-                    <input th:classappend="${param.error} ? 'is-invalid' : ''" class="btn btn-primary w-100" type="submit" value="Submit">
-                    <div class="invalid-feedback">
-                        Bad credentials
+    <!-- Navigation -->
+    <div th:replace="fragments/header :: navigation"></div>
+
+    <div class="d-flex align-items-center h-100">
+        <div class="container p-0">
+            <div class="col-sm-6 col-md-4 col-lg-4 col-xl-3 m-auto mt-5 p-0">
+                <div class="row justify-content-center">
+
+                    <!-- Edit user title -->
+                    <div class="bg-black text-center p-2 rounded-top">
+                        <img class="d-inline text-white fw-bold" style="width:40px" th:src="@{/images/shortz_icon.png}"
+                            alt="Shortz">
                     </div>
+
+                    <!-- Form -->
+                    <div class="row justify-content-center p-0">
+                        <form th:action="@{/user/login}" method="post"
+                            class="border-radius-3 rounded-bottom p-4 bg-dark text-white">
+                            <div class="mb-3">
+                                <label th:text="#{ui.user.username}" for="username" class="form-label">Username</label>
+                                <input class="form-control" type="text" name="username"
+                                    th:placeholder="#{ui.user.username}" id="username">
+                            </div>
+                            <div class="mb-3">
+                                <label th:text="#{ui.user.password}" for="password" class="form-label">Password</label>
+                                <input class="form-control" type="password" name="password"
+                                    th:placeholder="#{ui.user.password}" id="password">
+                            </div>
+                            <div class="mb-3 ">
+                                <input th:classappend="${param.error} ? 'is-invalid' : ''" class="btn btn-primary w-100"
+                                    type="submit" th:value="#{menu.nav.btn.submit}">
+                                <div class="invalid-feedback">
+                                    Bad credentials
+                                </div>
+                            </div>
+                            <a th:text="#{menu.nav.btn.register}" th:href="@{/user/register}"
+                                class="btn btn-secondary m-auto">Register</a>
+                        </form>
+
+                    </div>
+
                 </div>
-                <a th:href="@{/user/register}" class="btn btn-secondary m-auto">Register</a>
-            </form>
+            </div>
+
         </div>
     </div>
+
 </body>
 
 </html>
