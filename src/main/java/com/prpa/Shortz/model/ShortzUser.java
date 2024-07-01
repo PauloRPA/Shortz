@@ -5,10 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -42,6 +39,9 @@ public class ShortzUser implements UserDetails {
     @Column(name = "url_count", nullable = false)
     private Integer urlCount;
 
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "owner")
+    private List<ShortUrl> shortUrls;
+
     @NotBlank @Length(min = 6, max = 255)
     @Column(name = "password", nullable = false)
     private String password;
@@ -52,7 +52,6 @@ public class ShortzUser implements UserDetails {
 
     @Column(name = "account_enabled")
     private Boolean enabled;
-
 
     // UserDetails IMPL
     @Override

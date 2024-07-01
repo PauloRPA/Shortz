@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.util.ArrayList;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -26,9 +28,9 @@ public class UserRepositoryTest {
     @BeforeEach
     public void setup() {
         adminRoleUser = new ShortzUser(0L, ADMIN_ROLE_USERNAME, ADMIN_ROLE_EMAIL,
-                99, "passwd", Role.ADMIN, true);
+                99, new ArrayList<>(),  "passwd", Role.ADMIN, true);
         userRoleUser = new ShortzUser(0L, USER_ROLE_USERNAME, USER_ROLE_EMAIL,
-                99, "passwd2", Role.USER, true);
+                99, new ArrayList<>(), "passwd2", Role.USER, true);
     }
 
     @Test

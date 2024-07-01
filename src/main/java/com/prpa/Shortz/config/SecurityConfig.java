@@ -22,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 @Configuration @EnableWebSecurity
 public class SecurityConfig {
@@ -124,7 +125,7 @@ public class SecurityConfig {
             if (generatedCredentials)
                 System.out.println(message);
 
-            ShortzUser dev = new ShortzUser(0L, USER, "dev@dev.com", ShortzUser.UNLIMITED_URL_COUNT, encoder.encode(PASSWORD), Role.ADMIN, true);
+            ShortzUser dev = new ShortzUser(0L, USER, "dev@dev.com", ShortzUser.UNLIMITED_URL_COUNT, new ArrayList<>(), encoder.encode(PASSWORD), Role.ADMIN, true);
             userRepository.save(dev);
         };
     }
