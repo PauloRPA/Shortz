@@ -25,7 +25,7 @@ public class ShortUrl {
     private Long id;
 
     @NotNull @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner", updatable = false, referencedColumnName = "id")
+    @JoinColumn(name = "owner_user_id", updatable = false, referencedColumnName = "id")
     private ShortzUser owner;
 
     @CreationTimestamp
