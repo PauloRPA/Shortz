@@ -15,7 +15,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@Entity @Data
+@Entity
+@Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 @Table(name = "shortz_user")
 public class ShortzUser implements UserDetails {

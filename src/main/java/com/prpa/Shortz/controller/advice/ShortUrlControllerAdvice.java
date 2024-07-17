@@ -1,6 +1,6 @@
 package com.prpa.Shortz.controller.advice;
 
-import com.prpa.Shortz.controller.ShortzUserController;
+import com.prpa.Shortz.controller.ShortUrlController;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -8,14 +8,14 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
-@ControllerAdvice(assignableTypes = ShortzUserController.class)
-public class ShortzUserControllerAdvice {
+@ControllerAdvice(assignableTypes = ShortUrlController.class)
+public class ShortUrlControllerAdvice {
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public String handleInvalidMethodArgument() {
-        final UriComponents adminPanelUri = MvcUriComponentsBuilder
-            .fromMethodName(ShortzUserController.class, "getUserManagement", null, null, null)
-            .buildAndExpand();
-        return "redirect:" + adminPanelUri;
+        final UriComponents urlManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortUrlController.class, "getUrls", null, null, null)
+                .buildAndExpand();
+        return "redirect:" + urlManagementUri;
     }
 }
