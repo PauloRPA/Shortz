@@ -17,15 +17,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.prpa.Shortz.model.ShortzUser.UNLIMITED_URL_COUNT;
 import static com.prpa.Shortz.model.enums.Role.ADMIN;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,12 +66,10 @@ public class ShortUrlControllerTest {
     private PasswordEncoder passwordEncoder;
 
     private ShortUrl testUrl;
-    private ShortUrlDTO testUrlDTO;
-    private ShortzUser urlOwner;
 
     @BeforeEach
     public void setup() throws MalformedURLException {
-        urlOwner = ShortzUser.builder()
+        ShortzUser urlOwner = ShortzUser.builder()
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
                 .password(passwordEncoder.encode(USER_PASSWORD))
@@ -80,14 +87,6 @@ public class ShortUrlControllerTest {
                 .build();
 
         shortzUserRepository.save(urlOwner);
-
-        testUrlDTO = ShortUrlDTO.builder()
-                .id(String.valueOf(testUrl.getId()))
-                .creationTimestamp(testUrl.getCreationTimestamp())
-                .hit(testUrl.getHit())
-                .slug(testUrl.getSlug())
-                .url(testUrl.getUrl())
-                .build();
     }
 
     // GET URLs management panel
@@ -128,6 +127,114 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isFound());
     }
 
+    // Post url delete
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url deve remover a url corretamente.")
+    public void whenUserPostDeleteUrl_shouldRemoveSpecifiedUrl() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isFalse();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUrlManagement() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(false);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetUrlManagement() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        final long THIS_ID_DOES_NOT_EXIST = 99999L;
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(THIS_ID_DOES_NOT_EXIST);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUrlManagement() {
+        //Given
+        final String MALFORMED_UUID = "thisIsAMalformedUUID";
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", MALFORMED_UUID))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+    }
+
+
     // GET System URLs management panel
     // ####################################################
 
@@ -166,6 +273,113 @@ public class ShortUrlControllerTest {
                         .param("p", PAGE_THAT_DOES_NOT_EXIST)
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isFound());
+    }
+
+    // Post url delete
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url deve remover a url corretamente.")
+    public void whenUserPostDeleteSystemUrl_shouldRemoveSpecifiedUrl() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isFalse();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetSystemUrlManagement() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(false);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetSystemUrlManagement() {
+        //Given
+        final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        final long THIS_ID_DOES_NOT_EXIST = 99999L;
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(THIS_ID_DOES_NOT_EXIST);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", String.valueOf(TEST_UUID)))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetSystemUrlManagement() {
+        //Given
+        final String MALFORMED_UUID = "thisIsAMalformedUUID";
+        shortUrlRepository.save(testUrl);
+
+        // When
+        final var uuidToShortUrlIdMapMock = mock(Map.class);
+        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+
+        // Then
+        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .param("id", MALFORMED_UUID))
+                .andExpect(status().isFound());
+
+        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
     }
 
 }

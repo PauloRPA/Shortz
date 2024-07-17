@@ -9,6 +9,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponents;
 
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +82,32 @@ public class ShortUrlController {
         return "user/urls/url_management";
     }
 
+    @PostMapping("/urls/delete")
+    public ModelAndView postDeleteUser(@RequestParam("id") UUID shortUrlUUID,
+                                       @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                                       RedirectAttributes redirectAttributes) {
+
+        ModelAndView mav = new ModelAndView();
+
+        final UriComponents urlManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortUrlController.class, "getUrls", null, null, null)
+                .buildAndExpand();
+
+        if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
+            uuidShortUrlIdMap.clear();
+            mav.setViewName("redirect:" + urlManagementUri);
+            return mav;
+        }
+
+        Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
+
+        shortUrlService.deleteById(shortUrlId);
+        redirectAttributes.addFlashAttribute("message", "url.deleted");
+        redirectAttributes.addFlashAttribute("messageType", "success");
+        mav.setViewName("redirect:" + urlManagementUri);
+        return mav;
+    }
+
     @GetMapping("/adm/urls")
     public String getSystemUrls(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                                 @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
@@ -117,5 +147,30 @@ public class ShortUrlController {
         return "user/adm/adm_url_management";
     }
 
+    @PostMapping("adm/urls/delete")
+    public ModelAndView postDeleteSystemUrl(@RequestParam("id") UUID shortUrlUUID,
+                                            @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                                            RedirectAttributes redirectAttributes) {
+
+        ModelAndView mav = new ModelAndView();
+
+        final UriComponents systemUrlManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortUrlController.class, "getSystemUrls", null, null, null)
+                .buildAndExpand();
+
+        if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
+            uuidShortUrlIdMap.clear();
+            mav.setViewName("redirect:" + systemUrlManagementUri);
+            return mav;
+        }
+
+        Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
+
+        shortUrlService.deleteById(shortUrlId);
+        redirectAttributes.addFlashAttribute("message", "url.deleted");
+        redirectAttributes.addFlashAttribute("messageType", "success");
+        mav.setViewName("redirect:" + systemUrlManagementUri);
+        return mav;
+    }
 
 }
