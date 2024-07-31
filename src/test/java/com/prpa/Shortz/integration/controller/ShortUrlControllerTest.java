@@ -2,7 +2,6 @@ package com.prpa.Shortz.integration.controller;
 
 import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
-import com.prpa.Shortz.model.dto.ShortUrlDTO;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;

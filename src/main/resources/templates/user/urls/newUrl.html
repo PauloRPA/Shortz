@@ -43,7 +43,7 @@
                                 <label th:text="#{ui.url.url.form}" for="url" class="form-label">Url</label>
                                 <input th:classappend="${#fields.hasErrors('url')}? is-invalid" th:field="*{url}"
                                     class="form-control bg-dark-subtle" th:placeholder="#{ui.url.url.form}" id="url"
-                                    type="url" name="url" placeholder="Url" required>
+                                    type="text" name="url" placeholder="Url" required>
 
                                 <div th:if="${#fields.hasErrors('url')}" th:classappend="invalid-feedback"
                                     th:each="err: ${#fields.errors('url')}" th:text="${err}">

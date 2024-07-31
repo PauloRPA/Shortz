@@ -7,8 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -19,12 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class EncodeRandomUrlShortenerTest {
 
     private final int INITIAL_WINDOW_SIZE = 6;
-    private final URL VALID_URL = new URL("https://www.youtube.com/?video=id");
-    private final URL FTP_PROTOCOL_URL = new URL("ftp://www.youtube.com/");
+    private final URI VALID_URL = new URI("https://www.youtube.com/?video=id");
+    private final URI FTP_PROTOCOL_URL = new URI("ftp://www.youtube.com/");
 
     private UrlShortener encodeUrlShortener;
 
-    public EncodeRandomUrlShortenerTest() throws MalformedURLException {}
+    public EncodeRandomUrlShortenerTest() throws URISyntaxException {}
 
     @BeforeEach
     void setUp() {

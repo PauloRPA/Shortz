@@ -5,7 +5,7 @@ import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -48,6 +48,7 @@ public class EncodeRandomUrlShortener implements UrlShortener {
         Objects.requireNonNull(dictionary, "Dictionary must not be null.");
         Objects.requireNonNull(random, "Random must not be null.");
         Objects.requireNonNull(stringEncoder, "stringEncoder must not be null.");
+        if (supportedProtocols.isEmpty()) throw new IllegalArgumentException("Supported protocols must not be empty.");
         if (windowSize < 1) throw new IllegalArgumentException("windowSize must not be less than 1.");
 
         this.windowSize = windowSize;
@@ -58,20 +59,23 @@ public class EncodeRandomUrlShortener implements UrlShortener {
         this.random = random;
     }
 
-    private Optional<String> encodeUrlToWindowSize(URL url, int windowSize) {
-        Objects.requireNonNull(url, "Url must not be null.");
-        if (!supportedProtocols.isEmpty() && !supportedProtocols.contains(url.getProtocol())) return Optional.empty();
+    private Optional<String> encodeUrlToWindowSize(URI uri, int windowSize) {
+        Objects.requireNonNull(uri, "Url must not be null.");
+        if (uri.getScheme() == null) return Optional.empty();
+        if (uri.getHost() == null) return Optional.empty();
+        if (uri.getPath() == null) return Optional.empty();
+        if (!supportedProtocols.isEmpty() && !supportedProtocols.contains(uri.getScheme())) return Optional.empty();
 
-        var encodedURL = new StringBuilder(stringEncoder.encode(url.getHost() + url.getFile()));
+        var encodedURI = new StringBuilder(stringEncoder.encode(uri.getHost() + uri.getPath()));
 
-        if (windowSize > encodedURL.length()) {
-            final int diff = windowSize - encodedURL.length();
+        if (windowSize > encodedURI.length()) {
+            final int diff = windowSize - encodedURI.length();
             for (int i = 0; i < diff; i++) {
-                encodedURL.append(randomDictionaryChar());
+                encodedURI.append(randomDictionaryChar());
             }
         }
 
-        String validEncodedUrl = replaceInvalidChars(encodedURL, "_");
+        String validEncodedUrl = replaceInvalidChars(encodedURI, "_");
         return Optional.of(validEncodedUrl.substring(0, windowSize));
     }
 
@@ -85,14 +89,14 @@ public class EncodeRandomUrlShortener implements UrlShortener {
     }
 
     @Override
-    public Optional<String> encodeUrl(URL url) {
-        return encodeUrlToWindowSize(url, windowSize);
+    public Optional<String> encodeUrl(URI uri) {
+        return encodeUrlToWindowSize(uri, windowSize);
     }
 
     @Override
-    public Optional<String> encodeUrl(URL url, int increaseWindowBy) {
+    public Optional<String> encodeUrl(URI uri, int increaseWindowBy) {
         if (increaseWindowBy < 0) throw new IllegalArgumentException("increaseWindowBy must not be negative.");
-        return encodeUrlToWindowSize(url, windowSize + increaseWindowBy);
+        return encodeUrlToWindowSize(uri, windowSize + increaseWindowBy);
     }
 
     @Override
