@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -33,7 +32,7 @@ public class EncodeRandomUrlShortenerTest {
 
     @Test
     @DisplayName("Quando encurtar uma url deve retornar um hash no tamanho adequado.")
-    public void whenShortUrl_shouldEncodeAndReturnHashRequiredWindowSize() throws NoSuchAlgorithmException {
+    public void whenShortUrl_shouldEncodeAndReturnHashRequiredWindowSize() {
         final int initialWindow = encodeUrlShortener.getWindowSize();
         Optional<String> encodedUrlInitialWindow = encodeUrlShortener.encodeUrl(VALID_URL);
         Optional<String> encodedUrlIncreaseWindow = encodeUrlShortener.encodeUrl(VALID_URL, 1);
@@ -49,7 +48,7 @@ public class EncodeRandomUrlShortenerTest {
 
     @Test
     @DisplayName("Retorna um hash valido quando qualquer protocolo é permitido.")
-    public void whenShortUrlValidProtocol_shouldReturnHash() throws NoSuchAlgorithmException {
+    public void whenShortUrlValidProtocol_shouldReturnHash() {
         var urlShortener = new EncodeRandomUrlShortener(new DigestToBase64StringEncoder(), INITIAL_WINDOW_SIZE);
         Optional<String> encodedUrl = urlShortener.encodeUrl(FTP_PROTOCOL_URL);
 
@@ -58,7 +57,7 @@ public class EncodeRandomUrlShortenerTest {
 
     @Test
     @DisplayName("Retorna vazio quando um protocolo invalido é informado.")
-    public void whenShortUrlInvalidProtocol_shouldReturnEmpty() throws NoSuchAlgorithmException {
+    public void whenShortUrlInvalidProtocol_shouldReturnEmpty() {
         var urlShortener = new EncodeRandomUrlShortener(new DigestToBase64StringEncoder(), INITIAL_WINDOW_SIZE, WEB_PROTOCOLS);
         Optional<String> encodedUrl = urlShortener.encodeUrl(FTP_PROTOCOL_URL);
 
@@ -67,7 +66,7 @@ public class EncodeRandomUrlShortenerTest {
 
     @Test
     @DisplayName("A janela informada é maior que o tamanho da str codificada, chars aleatórios devem ser gerados.")
-    public void whenShortUrlWindowLargerOutOfBounds_shouldGenerateRandomChars() throws NoSuchAlgorithmException {
+    public void whenShortUrlWindowLargerOutOfBounds_shouldGenerateRandomChars() {
         final int NUMBER_OF_SAMPLES = 10;
         final int OUT_OF_BOUNDS_WINDOW_SIZE = 99;
         final String[] samples = new String[NUMBER_OF_SAMPLES];
@@ -88,7 +87,7 @@ public class EncodeRandomUrlShortenerTest {
 
     @Test
     @DisplayName("O encoder apenas retorna chars inválidos para uma url. Todos chars devem ser substituídos por _")
-    public void whenShortUrlAnsStringEncoderReturnsInvalidChars_shouldReplaceCharsTo_() throws NoSuchAlgorithmException {
+    public void whenShortUrlAnsStringEncoderReturnsInvalidChars_shouldReplaceCharsTo_() {
         String urlUnsafeChars = "!@#$%^&*(=;:'\"";
         final int initialWindow = urlUnsafeChars.length();
         UrlShortener urlShortener = new EncodeRandomUrlShortener(s -> urlUnsafeChars, initialWindow);

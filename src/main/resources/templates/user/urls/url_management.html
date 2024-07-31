@@ -25,6 +25,12 @@
     </div>
 
     <div class="container">
+
+        <!-- New url -->
+        <div class="m-3 ">
+            <a class="btn btn-success w-100" th:href="@{/user/urls/new}" th:value="#{menu.nav.btn.url}">New url</a>
+        </div>
+
         <!-- No urls message -->
         <div class="mt-5" th:if="${urlsPage.numberOfElements} == 0">
             <h2 class="text-white text-center bg-dark rounded lh-lg" th:text="#{empty.urls}"></h2>

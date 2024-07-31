@@ -2,6 +2,8 @@ package com.prpa.Shortz.controller;
 
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortUrlDTO;
+import com.prpa.Shortz.model.form.ShortUrlForm;
+import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.service.ShortUrlService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,10 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +36,23 @@ public class ShortUrlController {
     private static final Integer NUMBER_PAGINATION_OPTIONS = 5;
 
     private final ShortUrlService shortUrlService;
+    private final UrlShortener urlShortener;
 
     @Autowired
-    public ShortUrlController(ShortUrlService shortUrlService) {
+    public ShortUrlController(ShortUrlService shortUrlService, UrlShortener urlShortener) {
         this.shortUrlService = shortUrlService;
+        this.urlShortener = urlShortener;
     }
 
     @ModelAttribute("uuidShortUrlIdMap")
     public Map<UUID, Long> getUUIDShortUrlMap() {
         return new HashMap<>();
+    }
+
+    @GetMapping("/urls/new")
+    public String getNewUrl(Model model) {
+        model.addAttribute("newUrlForm", new ShortUrlForm());
+        return "user/urls/newUrl";
     }
 
     @GetMapping("/urls")
@@ -171,6 +185,32 @@ public class ShortUrlController {
         redirectAttributes.addFlashAttribute("messageType", "success");
         mav.setViewName("redirect:" + systemUrlManagementUri);
         return mav;
+    }
+
+    @ResponseBody
+    @PostMapping(value = "/urls/generate", consumes = "application/json", produces = "text/plain")
+    public String postGenerateSlug(@RequestParam Map<String, String> params) {
+        if (!params.containsKey("url") || params.get("url").isBlank()) return "";
+        String DEFAULT_SCHEME = "https://";
+        final URI uri;
+
+        try {
+            final boolean hasScheme = params.get("url").contains("://");
+            String schemePrefix = hasScheme ? "" : DEFAULT_SCHEME;
+            String fullUrl = schemePrefix + params.get("url");
+
+            if (!hasScheme) {
+                new URL(fullUrl);
+            }
+
+            if (!fullUrl.contains(".")) return "";
+
+            uri = new URI(fullUrl);
+        } catch (URISyntaxException | MalformedURLException  e) {
+            return "";
+        }
+
+        return urlShortener.encodeUrl(uri).orElse("");
     }
 
 }
