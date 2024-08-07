@@ -18,19 +18,20 @@ function getFirstLine(input) {
 }
 
 async function fetchSlug(url, params) {
-    if (!params.get('url')) return Promise.reject(EMPTY)
+    if (!params.url) return Promise.reject(EMPTY)
     if (!params) return Promise.reject(EMPTY)
 
     const csrfToken = document.querySelector("meta[name='_csrf']").content
     const csrfHeader = document.querySelector("meta[name='_csrf_header']").content
 
     try {
-        const response = await fetch(`${url}?${params}`, {
+        const response = await fetch(`${url}`, {
             method: 'POST',
             headers: {
                 [csrfHeader]: csrfToken,
                 'Content-Type': 'application/json'
             },
+            body: JSON.stringify(params)
         })
 
         if (response.ok) {
@@ -53,7 +54,7 @@ function setSlugField(line) {
     slugTextField.value = line ? line : EMPTY
 }
 
-function errorFetchingSlug() {
+function showErrorFetchingSlug() {
     const invalidSlugMessage = document.querySelector("meta[name='invalidSlugMessage']").content
     errorMessageElement.innerHTML = invalidSlugMessage
     urlTextField.classList.add('is-invalid')
@@ -62,8 +63,8 @@ function errorFetchingSlug() {
 generateSlugBtn.onclick = (event) => {
     event.preventDefault()
 
-    const params = new URLSearchParams({
+    const params = {
         url: urlTextField.value
-    })
-    fetchSlug(generateSlugUrl, params).then(setSlugField, errorFetchingSlug)
+    }
+    fetchSlug(generateSlugUrl, params).then(setSlugField, showErrorFetchingSlug)
 }

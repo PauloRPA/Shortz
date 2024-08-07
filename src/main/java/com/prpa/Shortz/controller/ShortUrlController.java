@@ -2,6 +2,8 @@ package com.prpa.Shortz.controller;
 
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortUrlDTO;
+import com.prpa.Shortz.model.exceptions.EmptyUriException;
+import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.service.ShortUrlService;
@@ -50,9 +52,15 @@ public class ShortUrlController {
     }
 
     @GetMapping("/urls/new")
-    public String getNewUrl(Model model) {
+    public ModelAndView getNewUrl(Model model) {
         model.addAttribute("newUrlForm", new ShortUrlForm());
-        return "user/urls/newUrl";
+        ModelAndView mav = new ModelAndView();
+        mav.setViewName("user/urls/newUrl");
+        return mav;
+    }
+        ModelAndView mav = new ModelAndView();
+        mav.setViewName("user/urls/newUrl");
+        return mav;
     }
 
     @GetMapping("/urls")
@@ -189,28 +197,37 @@ public class ShortUrlController {
 
     @ResponseBody
     @PostMapping(value = "/urls/generate", consumes = "application/json", produces = "text/plain")
-    public String postGenerateSlug(@RequestParam Map<String, String> params) {
-        if (!params.containsKey("url") || params.get("url").isBlank()) return "";
+    public String postGenerateSlug(@RequestBody(required = false) Map<String, String> bodyParams) {
+        if (bodyParams == null) throw new EmptyUriException("");
+        if (!bodyParams.containsKey("url") || bodyParams.get("url").isBlank()) throw new EmptyUriException("");
+
+        String encoded = validateUri(bodyParams.get("url"))
+                .map(validateUri -> urlShortener.encodeUrl(validateUri).orElse(""))
+                .orElse("");
+
+        if (encoded.isBlank()) throw new InvalidUriException("");
+        return encoded;
+    }
+
+    private Optional<URI> validateUri(String uriToValidate) {
         String DEFAULT_SCHEME = "https://";
         final URI uri;
 
         try {
-            final boolean hasScheme = params.get("url").contains("://");
+            final boolean hasScheme = uriToValidate.contains("://");
             String schemePrefix = hasScheme ? "" : DEFAULT_SCHEME;
-            String fullUrl = schemePrefix + params.get("url");
+            String fullUrl = schemePrefix + uriToValidate;
 
             if (!hasScheme) {
                 new URL(fullUrl);
             }
 
-            if (!fullUrl.contains(".")) return "";
+            if (!fullUrl.contains(".") && !hasScheme) return Optional.empty();
 
-            uri = new URI(fullUrl);
+            return Optional.of(new URI(fullUrl));
         } catch (URISyntaxException | MalformedURLException  e) {
-            return "";
+            return Optional.empty();
         }
-
-        return urlShortener.encodeUrl(uri).orElse("");
     }
 
 }
