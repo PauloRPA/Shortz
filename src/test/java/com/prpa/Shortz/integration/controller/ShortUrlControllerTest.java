@@ -2,6 +2,7 @@ package com.prpa.Shortz.integration.controller;
 
 import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
+import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;
@@ -14,15 +15,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.prpa.Shortz.model.ShortzUser.UNLIMITED_URL_COUNT;
@@ -34,10 +39,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {"SUPPORTED_PROTOCOLS = https,http,sftp"})
 @AutoConfigureMockMvc
 public class ShortUrlControllerTest {
 
@@ -63,6 +67,9 @@ public class ShortUrlControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UrlShortener urlShortener;
 
     private ShortUrl testUrl;
 
@@ -380,5 +387,135 @@ public class ShortUrlControllerTest {
 
         assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
     }
+
+    // Get add url endpoint
+
+    @Test
+    @SneakyThrows
+    @WithAnonymousUser
+    @DisplayName("Quando alguém anonimo get o form para criar uma nova url 302 Found para /user/login.")
+    public void whenAnonymousGetNewUrlForm_shouldOk() {
+        mockMvc.perform(get("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrlPattern("**/user/login"));
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário get o form para criar uma nova url deve 200 OK.")
+    public void whenUserGetNewUrlForm_shouldOk() {
+        mockMvc.perform(get("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isOk());
+    }
+
+    // Post generate slug endpoint
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post para gerar slug deve retornar plain text slug 200 OK.")
+    public void whenUserGenerateSlugFromValidUri_shouldReturnDefaultPlainTextSlug() {
+        URI[] validUris = getValidUris();
+
+        for (URI validUri : validUris) {
+            URI prefixedUri = validUri; //A URI enviada para UrlShortener deve possuir um scheme
+            if (validUri.getScheme() == null) {
+                prefixedUri = URI.create("http://" + validUri);
+            }
+
+            Optional<String> encodedUrl = urlShortener.encodeUrl(prefixedUri);
+            assertThat(encodedUrl).isPresent();
+            String expectedString = encodedUrl.get();
+
+            mockMvc.perform(post("/user/urls/generate")
+                            .accept(MediaType.TEXT_PLAIN)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"url\": \"%s\"}".formatted(validUri.toString()))
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                    .andExpect(MockMvcResultMatchers.content().string(expectedString));
+        }
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post para gerar slug com uri vazia deve retornar vazio 400 BAD_REQUEST.")
+    public void whenUserGenerateSlugFromEmptyUri_shouldReturnEmpty() {
+        String[] EMPTY_URIS = {"", "{\"url\": \"\"}"};
+        for (String emptyUri : EMPTY_URIS) {
+            mockMvc.perform(post("/user/urls/generate")
+                            .accept(MediaType.TEXT_PLAIN)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(emptyUri)
+                            .with(csrf()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                    .andExpect(MockMvcResultMatchers.content().string(""));
+        }
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post para gerar slug com uri invalida deve retornar 400 BAD_REQUEST.")
+    public void whenUserGenerateSlugFromInvalidUri_shouldReturnEmpty() {
+        for (String invalidUri : getInvalidUris()) {
+            String invalidUriRequestBody = "{\"url\": \"%s\"}".formatted(invalidUri);
+            mockMvc.perform(post("/user/urls/generate")
+                            .accept(MediaType.TEXT_PLAIN)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(invalidUriRequestBody)
+                            .with(csrf()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                    .andExpect(MockMvcResultMatchers.content().string(""));
+        }
+    }
+
+    /**
+     * Uma URI só é valida caso a mesma possua o scheme e/ou TLD. A URI não pode NÂO conter ambos.
+     * Além disso, a URI deve ter um scheme válido para encurtamento. Os schemes validos são definidos pela variável de
+     * ambiente SUPPORTED_PROTOCOLS.
+     * Para fins de teste estão sendo considerados validos os protocolos, http, https, sftp.
+     *
+     * @return Array com urls validas
+     */
+    private static URI[] getValidUris() {
+        String validNoSchemeUriWithTLD = "localhost.com/something";
+        String validHTTPUriWithoutTLD = "http://localhost/something";
+        String validHTTPSUriWithoutTLD = "https://localhost/something";
+        String validSFTPUriWithoutTLD = "sftp://localhost/something";
+
+        String validHTTPUriWithTLD = "http://localhost.com/something";
+        String validHTTPSUriWithTLD = "https://localhost.com/something";
+        String validSFTPUriWithTLD = "sftp://localhost.com/something";
+
+        String[] validUrisString = {validNoSchemeUriWithTLD, validHTTPUriWithoutTLD, validHTTPSUriWithoutTLD,
+                validSFTPUriWithoutTLD, validHTTPUriWithTLD, validHTTPSUriWithTLD, validSFTPUriWithTLD};
+
+        return Arrays.stream(validUrisString).map(URI::create).toArray(URI[]::new);
+    }
+
+    /**
+     * Uma URI é invalida caso a mesma possua caracteres inválidos, não possua um scheme valido (descrito na variável
+     * de ambiente) e/ou esteja faltando o scheme E o TLD.
+     *
+     * @return Array com urls invalidas
+     */
+    private static String[] getInvalidUris() {
+        String invalidNoTLDNoScheme = "localhost/something";
+        String invalidSchemeWithoutTLD = "gopher://localhost/something";
+        String invalidCharactersWithTLD = "http://localhos-=_+!@#$^&*()t.com/something";
+        String invalidSchemeWithTLD = "gopher://localhost.com/something";
+
+        return new String[]{invalidNoTLDNoScheme, invalidSchemeWithoutTLD,
+                invalidCharactersWithTLD, invalidSchemeWithTLD};
+    }
+
 
 }
