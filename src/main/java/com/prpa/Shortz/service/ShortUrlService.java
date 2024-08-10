@@ -55,4 +55,20 @@ public class ShortUrlService {
         shortUrlRepository.deleteById(shortUrlId);
         return exists;
     }
+
+    public void save(URI uri, ShortUrlForm form, ShortzUser owner) {
+        final ShortUrl newShortUrl = ShortUrl.builder()
+                .url(uri.toString())
+                .owner(owner)
+                .slug(form.getSlug())
+                .creationTimestamp(Instant.now())
+                .hit(0)
+                .build();
+        shortUrlRepository.save(newShortUrl);
+    }
+
+    public boolean existsBySlug(String slug) {
+        if (slug.trim().isBlank()) return false;
+        return shortUrlRepository.existsBySlug(slug);
+    }
 }

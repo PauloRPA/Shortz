@@ -121,6 +121,7 @@ public class ShortUrlControllerTest {
 
     @Test
     @SneakyThrows
+    @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Quando o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
     public void whenUserGetUrlManagementWithNonexistentPage_shouldRedirectToP0() {
@@ -476,6 +477,130 @@ public class ShortUrlControllerTest {
         }
     }
 
+    // POST new uri
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post adicionar uma nova uri valida deve retornar 200 OK.")
+    public void whenUserPostNewValidURI_should200Ok() {
+        URI[] validUris = getValidUris();
+
+        for (URI validUri : validUris) {
+            URI prefixedUri = validUri; //A URI enviada para UrlShortener deve possuir um scheme
+            if (validUri.getScheme() == null) {
+                prefixedUri = URI.create("http://" + validUri);
+            }
+
+            Optional<String> encodedUrl = urlShortener.encodeUrl(prefixedUri);
+            assertThat(encodedUrl).isPresent();
+            String encodedSlug = encodedUrl.get();
+
+            mockMvc.perform(post("/user/urls/new")
+                            .accept(MediaType.TEXT_HTML)
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                            .param("url", prefixedUri.toString())
+                            .param("slug", encodedSlug)
+                            .with(csrf()))
+                    .andExpect(status().isFound())
+                    .andExpect(redirectedUrl("/user/urls"));
+        }
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post inserir uma uri existente deve retornar 400 BAD_REQUEST.")
+    public void whenUserPostNewURIThatAlreadyExists_shouldReturnBindingErrorMessage() {
+        URI[] repeatedURIS = new URI[]{
+                URI.create("https://localhost:6969/something"),
+                URI.create("http://localhost:6969/something")};
+
+        Optional<String> encodedUrl = urlShortener.encodeUrl(repeatedURIS[0]);
+        assertThat(encodedUrl).isPresent();
+        String encodedSlug = encodedUrl.get();
+
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", repeatedURIS[0].toString())
+                        .param("slug", encodedSlug)
+                        .with(csrf()))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/user/urls"));
+
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", repeatedURIS[1].toString())
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().errorCount(1))
+                .andExpect(model().attributeHasFieldErrors("newUrlForm", "slug"))
+                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "slug", "slug.exists"));
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
+    public void whenUserPostEmptyURI_shouldReturnErrorMessage200Ok() {
+        final URI EMPTY_URI = URI.create("");
+
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", EMPTY_URI.toString())
+                        .param("slug", "testslug")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().errorCount(1))
+                .andExpect(model().attributeHasFieldErrors("newUrlForm", "url"))
+                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "url", "NotBlank"));
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post inserir uma URI valida sem slug deve codificar a URI retornar 302 FOUND.")
+    public void whenUserPostEmptySlugAndValidURI_shouldEncodeURIReturn302Found() {
+        final URI VALID_URI = URI.create("https://localhost/something2");
+
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", VALID_URI.toString())
+                        .param("slug", "")
+                        .with(csrf()))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/user/urls"))
+                .andExpect(model().hasNoErrors());
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
+    public void whenUserPostEmptySlugAndinvalidURI_shouldReturn400BadRequest() {
+        for (String invalidUri : getInvalidUris()) {
+            mockMvc.perform(post("/user/urls/new")
+                            .accept(MediaType.TEXT_HTML)
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                            .param("url", invalidUri)
+                            .param("slug", "")
+                            .with(csrf()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(model().hasErrors())
+                    .andExpect(model().attributeErrorCount("newUrlForm", 1))
+                    .andExpect(model().attributeHasFieldErrors("newUrlForm", "url"))
+                    .andDo(print());
+        }
+    }
+
     /**
      * Uma URI só é valida caso a mesma possua o scheme e/ou TLD. A URI não pode NÂO conter ambos.
      * Além disso, a URI deve ter um scheme válido para encurtamento. Os schemes validos são definidos pela variável de
@@ -485,14 +610,14 @@ public class ShortUrlControllerTest {
      * @return Array com urls validas
      */
     private static URI[] getValidUris() {
-        String validNoSchemeUriWithTLD = "localhost.com/something";
-        String validHTTPUriWithoutTLD = "http://localhost/something";
-        String validHTTPSUriWithoutTLD = "https://localhost/something";
-        String validSFTPUriWithoutTLD = "sftp://localhost/something";
+        String validNoSchemeUriWithTLD = "localhost.com/something1";
+        String validHTTPUriWithoutTLD = "http://localhost/something2";
+        String validHTTPSUriWithoutTLD = "https://localhost/something3";
+        String validSFTPUriWithoutTLD = "sftp://localhost/something4";
 
-        String validHTTPUriWithTLD = "http://localhost.com/something";
-        String validHTTPSUriWithTLD = "https://localhost.com/something";
-        String validSFTPUriWithTLD = "sftp://localhost.com/something";
+        String validHTTPUriWithTLD = "http://localhost.com/something5";
+        String validHTTPSUriWithTLD = "https://localhost.com/something6";
+        String validSFTPUriWithTLD = "sftp://localhost.com/something7";
 
         String[] validUrisString = {validNoSchemeUriWithTLD, validHTTPUriWithoutTLD, validHTTPSUriWithoutTLD,
                 validSFTPUriWithoutTLD, validHTTPUriWithTLD, validHTTPSUriWithTLD, validSFTPUriWithTLD};
@@ -515,6 +640,4 @@ public class ShortUrlControllerTest {
         return new String[]{invalidNoTLDNoScheme, invalidSchemeWithoutTLD,
                 invalidCharactersWithTLD, invalidSchemeWithTLD};
     }
-
-
 }

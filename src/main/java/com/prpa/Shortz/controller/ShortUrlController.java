@@ -7,11 +7,15 @@ import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.service.ShortUrlService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
@@ -22,10 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -58,8 +59,54 @@ public class ShortUrlController {
         mav.setViewName("user/urls/newUrl");
         return mav;
     }
+
+    @PostMapping("/urls/new")
+    public ModelAndView postNewUrl(@Valid @ModelAttribute("newUrlForm") ShortUrlForm form,
+                                   BindingResult result,
+                                   @AuthenticationPrincipal ShortzUser owner) {
         ModelAndView mav = new ModelAndView();
-        mav.setViewName("user/urls/newUrl");
+
+        Optional<URI> uri = validateUri(form.getUrl().trim());
+
+        if (uri.isEmpty() && result.getFieldErrors("url").isEmpty()) {
+            result.rejectValue("url", "error.newUrlForm.url.invalid");
+        }
+
+        if (uri.isPresent() && !urlShortener.getSupportedProtocols().contains(uri.get().getScheme())) {
+            result.rejectValue("url", "error.newUrlForm.url.unsupported.protocol");
+        }
+
+        if (!result.getFieldErrors("url").isEmpty()) {
+            result.getModel().forEach(mav.getModelMap()::addAttribute);
+            mav.setViewName("/user/urls/newUrl");
+            mav.setStatus(HttpStatus.BAD_REQUEST);
+            return mav;
+        }
+
+        String slug = form.getSlug();
+        if ((slug == null || slug.isBlank()) && uri.isPresent()) {
+            slug = urlShortener.encodeUrl(uri.get()).orElse("");
+        }
+
+        if (slug == null || slug.isBlank()) {
+            result.rejectValue("slug", "error.newUrlForm.slug.encoding");
+        }
+
+        if (result.getFieldErrors("slug").isEmpty() && shortUrlService.existsBySlug(slug)) {
+            result.rejectValue("slug", "slug.exists");
+        }
+
+        if (result.hasErrors()) {
+            result.getModel().forEach(mav.getModelMap()::addAttribute);
+            mav.setViewName("/user/urls/newUrl");
+            mav.setStatus(HttpStatus.BAD_REQUEST);
+            return mav;
+        }
+        form.setSlug(slug);
+
+        shortUrlService.save(uri.get(), form, owner);
+
+        mav.setViewName("redirect:/user/urls");
         return mav;
     }
 
