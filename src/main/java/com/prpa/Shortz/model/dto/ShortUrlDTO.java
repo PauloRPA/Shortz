@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.net.URL;
+import java.net.URI;
 import java.time.Instant;
 
 @Data
@@ -30,5 +30,5 @@ public class ShortUrlDTO {
     private String slug;
 
     @NotNull
-    private URL url;
+    private URI url;
 }

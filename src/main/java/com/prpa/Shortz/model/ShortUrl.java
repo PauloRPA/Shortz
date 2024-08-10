@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.validator.constraints.Length;
 
-import java.net.URL;
 import java.time.Instant;
 
 @Entity
@@ -35,11 +35,12 @@ public class ShortUrl {
     private Integer hit;
 
     @NotNull @NotBlank
+    @Length(min=3, max = 255)
     @Column(name = "slug", updatable = false, unique = true)
     private String slug;
 
     @NotNull
     @Column(name = "url", updatable = false)
-    private URL url;
+    private String url;
 
 }

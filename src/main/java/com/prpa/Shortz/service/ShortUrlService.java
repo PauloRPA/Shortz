@@ -3,12 +3,15 @@ package com.prpa.Shortz.service;
 import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortUrlDTO;
+import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.time.Instant;
 import java.util.Objects;
 
 @Service
@@ -29,7 +32,7 @@ public class ShortUrlService {
                 .owner(shortUrl.getOwner().getUsername())
                 .hit(shortUrl.getHit())
                 .slug(shortUrl.getSlug())
-                .url(shortUrl.getUrl())
+                .url(URI.create(shortUrl.getUrl()))
                 .build());
     }
 
@@ -41,7 +44,7 @@ public class ShortUrlService {
                 .owner(shortUrl.getOwner().getUsername())
                 .hit(shortUrl.getHit())
                 .slug(shortUrl.getSlug())
-                .url(shortUrl.getUrl())
+                .url(URI.create(shortUrl.getUrl()))
                 .build());
     }
 

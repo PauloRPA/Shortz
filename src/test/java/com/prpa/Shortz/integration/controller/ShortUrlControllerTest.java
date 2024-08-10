@@ -22,8 +22,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -39,6 +38,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {"SUPPORTED_PROTOCOLS = https,http,sftp"})
@@ -74,7 +74,7 @@ public class ShortUrlControllerTest {
     private ShortUrl testUrl;
 
     @BeforeEach
-    public void setup() throws MalformedURLException {
+    public void setup() {
         ShortzUser urlOwner = ShortzUser.builder()
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
@@ -82,14 +82,13 @@ public class ShortUrlControllerTest {
                 .id(USER_ID).urlCount(UNLIMITED_URL_COUNT)
                 .role(ADMIN).enabled(true).build();
 
-        URL originalUrl = new URL(URL_STRING);
         testUrl = ShortUrl.builder()
                 .id(URL_ID)
                 .owner(urlOwner)
                 .creationTimestamp(URL_CREATION_TIMESTAMP)
                 .hit(URL_HITS)
                 .slug(URL_SLUG)
-                .url(originalUrl)
+                .url(URL_STRING)
                 .build();
 
         shortzUserRepository.save(urlOwner);
@@ -455,7 +454,7 @@ public class ShortUrlControllerTest {
                             .with(csrf()))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
-                    .andExpect(MockMvcResultMatchers.content().string(""));
+                    .andExpect(content().string(""));
         }
     }
 

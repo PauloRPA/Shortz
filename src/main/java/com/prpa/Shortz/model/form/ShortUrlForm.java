@@ -6,15 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.net.URL;
-
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
 public class ShortUrlForm {
 
-    @NotBlank
-    @org.hibernate.validator.constraints.URL
-    private URL url;
+    @NotBlank(message = "The url must not be blank.")
+    private String url;
 
     private String slug;
 }
