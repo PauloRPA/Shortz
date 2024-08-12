@@ -49,6 +49,7 @@ public class ShortUrlControllerTest {
     public static final String USER_PASSWORD = "123";
     public static final String USER_EMAIL = "test@user.com";
     public static final String USER_USERNAME = "testUser";
+    public static final String USER_URL_LIMIT_1_USERNAME = "testUserLimited";
 
     public static final Long URL_ID = 1L;
     public static final Instant URL_CREATION_TIMESTAMP = Instant.now();
@@ -82,6 +83,14 @@ public class ShortUrlControllerTest {
                 .id(USER_ID).urlCount(UNLIMITED_URL_COUNT)
                 .role(ADMIN).enabled(true).build();
 
+        ShortzUser urlLimitedOwner = ShortzUser.builder()
+                .username(USER_URL_LIMIT_1_USERNAME)
+                .email(USER_EMAIL + "z")
+                .urlCount(1)
+                .password(passwordEncoder.encode(USER_PASSWORD))
+                .id(USER_ID + 1)
+                .role(ADMIN).enabled(true).build();
+
         testUrl = ShortUrl.builder()
                 .id(URL_ID)
                 .owner(urlOwner)
@@ -92,6 +101,7 @@ public class ShortUrlControllerTest {
                 .build();
 
         shortzUserRepository.save(urlOwner);
+        shortzUserRepository.save(urlLimitedOwner);
     }
 
     // GET URLs management panel
@@ -540,6 +550,35 @@ public class ShortUrlControllerTest {
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrors("newUrlForm", "slug"))
                 .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "slug", "slug.exists"));
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_URL_LIMIT_1_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Quando o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
+    public void whenUserPostValidURIAboveUserLimit_shouldReturnErrorMessage400BadRequest() {
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", "https://localhost.io/testing")
+                        .param("slug", "abcdef")
+                        .with(csrf()))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/user/urls"));
+
+        // This request will exceed the limit of one URL that the current user can add
+        mockMvc.perform(post("/user/urls/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("url", "https://localhost.io/user/can/add/just/one/url")
+                        .param("slug", "zyxwvu")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().errorCount(1))
+                .andExpect(model().attributeHasFieldErrors("newUrlForm", "slug"))
+                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "slug", "error.newUrlForm.user.limit"));
     }
 
     @Test

@@ -13,4 +13,6 @@ public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long> {
     Page<ShortUrl> findAllByOwner(Pageable pageable, ShortzUser user);
 
     boolean existsBySlug(String slug);
+
+    Integer countByOwner(ShortzUser owner);
 }

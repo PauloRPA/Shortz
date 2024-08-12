@@ -96,6 +96,10 @@ public class ShortUrlController {
             result.rejectValue("slug", "slug.exists");
         }
 
+        if (shortUrlService.isUrlCountOverLimit(owner, owner.getUrlCount())) {
+            result.rejectValue("slug", "error.newUrlForm.user.limit");
+        }
+
         if (result.hasErrors()) {
             result.getModel().forEach(mav.getModelMap()::addAttribute);
             mav.setViewName("/user/urls/newUrl");

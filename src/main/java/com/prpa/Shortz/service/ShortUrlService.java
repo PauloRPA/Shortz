@@ -71,4 +71,8 @@ public class ShortUrlService {
         if (slug.trim().isBlank()) return false;
         return shortUrlRepository.existsBySlug(slug);
     }
+
+    public boolean isUrlCountOverLimit(ShortzUser owner, Integer limit) {
+        return shortUrlRepository.countByOwner(owner) >= limit;
+    }
 }
