@@ -104,11 +104,14 @@ public class ShortUrlControllerTest {
         shortzUserRepository.save(urlLimitedOwner);
     }
 
+    // *********************************
     // GET URLs management panel
+    // *********************************
+
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuario acionar a pagina para listar as suas urls.")
+    @DisplayName("Se o o usuario acionar a pagina para listar as suas urls.")
     public void whenUserGetUrlManagement_shouldSucceed() {
         mockMvc.perform(get("/user/urls")
                         .accept(MediaType.TEXT_HTML))
@@ -119,7 +122,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
+    @DisplayName("Se o o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
     public void whenUserGetUrlManagementWithNoUrls_shouldSucceed() {
         shortUrlRepository.deleteAll();
 
@@ -133,7 +136,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
+    @DisplayName("Se o o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
     public void whenUserGetUrlManagementWithNonexistentPage_shouldRedirectToP0() {
         shortUrlRepository.save(testUrl);
         String PAGE_THAT_DOES_NOT_EXIST = "999";
@@ -143,12 +146,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isFound());
     }
 
+    // *********************************
     // Post url delete
+    // *********************************
+
     @Test
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url deve remover a url corretamente.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url deve remover a url corretamente.")
     public void whenUserPostDeleteUrl_shouldRemoveSpecifiedUrl() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -174,7 +180,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -200,7 +206,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -228,7 +234,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUrlManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
@@ -251,13 +257,14 @@ public class ShortUrlControllerTest {
     }
 
 
+    // *********************************
     // GET System URLs management panel
-    // ####################################################
+    // *********************************
 
     @Test
     @SneakyThrows
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Quando o usuario acionar a pagina para listar as urls do sistema.")
+    @DisplayName("Se o o usuario acionar a pagina para listar as urls do sistema.")
     public void whenUserGetSystemUrlManagement_shouldSucceed() {
         mockMvc.perform(get("/user/adm/urls")
                         .accept(MediaType.TEXT_HTML))
@@ -268,7 +275,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Quando o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
+    @DisplayName("Se o o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
     public void whenUserGetSystemUrlManagementWithNoUrls_shouldSucceed() {
         shortUrlRepository.deleteAll();
 
@@ -281,7 +288,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Quando o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
+    @DisplayName("Se o o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
     public void whenUserGetSystemUrlManagementWithNonexistentPage_shouldRedirectToP0() {
         shortUrlRepository.save(testUrl);
         String PAGE_THAT_DOES_NOT_EXIST = "999";
@@ -291,12 +298,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isFound());
     }
 
+    // *********************************
     // Post url delete
+    // *********************************
+
     @Test
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url deve remover a url corretamente.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url deve remover a url corretamente.")
     public void whenUserPostDeleteSystemUrl_shouldRemoveSpecifiedUrl() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -322,7 +332,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetSystemUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -348,7 +358,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetSystemUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
@@ -376,7 +386,7 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
+    @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
     public void whenUserPostDeleteMalformedUUID_shouldRedirectGetSystemUrlManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
@@ -398,12 +408,14 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
     }
 
+    // *********************************
     // Get add url endpoint
+    // *********************************
 
     @Test
     @SneakyThrows
     @WithAnonymousUser
-    @DisplayName("Quando alguém anonimo get o form para criar uma nova url 302 Found para /user/login.")
+    @DisplayName("Se o alguém anonimo get o form para criar uma nova url 302 Found para /user/login.")
     public void whenAnonymousGetNewUrlForm_shouldOk() {
         mockMvc.perform(get("/user/urls/new")
                         .accept(MediaType.TEXT_HTML))
@@ -414,19 +426,21 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário get o form para criar uma nova url deve 200 OK.")
+    @DisplayName("Se o o usuário get o form para criar uma nova url deve 200 OK.")
     public void whenUserGetNewUrlForm_shouldOk() {
         mockMvc.perform(get("/user/urls/new")
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
     }
 
+    // *********************************
     // Post generate slug endpoint
+    // *********************************
 
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post para gerar slug deve retornar plain text slug 200 OK.")
+    @DisplayName("Se o o usuário post para gerar slug deve retornar plain text slug 200 OK.")
     public void whenUserGenerateSlugFromValidUri_shouldReturnDefaultPlainTextSlug() {
         URI[] validUris = getValidUris();
 
@@ -454,7 +468,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post para gerar slug com uri vazia deve retornar vazio 400 BAD_REQUEST.")
+    @DisplayName("Se o o usuário post para gerar slug com uri vazia deve retornar vazio 400 BAD_REQUEST.")
     public void whenUserGenerateSlugFromEmptyUri_shouldReturnEmpty() {
         String[] EMPTY_URIS = {"", "{\"url\": \"\"}"};
         for (String emptyUri : EMPTY_URIS) {
@@ -472,7 +486,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post para gerar slug com uri invalida deve retornar 400 BAD_REQUEST.")
+    @DisplayName("Se o o usuário post para gerar slug com uri invalida deve retornar 400 BAD_REQUEST.")
     public void whenUserGenerateSlugFromInvalidUri_shouldReturnEmpty() {
         for (String invalidUri : getInvalidUris()) {
             String invalidUriRequestBody = "{\"url\": \"%s\"}".formatted(invalidUri);
@@ -487,12 +501,14 @@ public class ShortUrlControllerTest {
         }
     }
 
+    // *********************************
     // POST new uri
+    // *********************************
 
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post adicionar uma nova uri valida deve retornar 200 OK.")
+    @DisplayName("Se o o usuário post adicionar uma nova uri valida deve retornar 200 OK.")
     public void whenUserPostNewValidURI_should200Ok() {
         URI[] validUris = getValidUris();
 
@@ -520,7 +536,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post inserir uma uri existente deve retornar 400 BAD_REQUEST.")
+    @DisplayName("Se o usuário post inserir uma uri com slug existente deve retornar 400 BAD_REQUEST.")
     public void whenUserPostNewURIThatAlreadyExists_shouldReturnBindingErrorMessage() {
         URI[] repeatedURIS = new URI[]{
                 URI.create("https://localhost:6969/something"),
@@ -555,7 +571,8 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_URL_LIMIT_1_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
+    @DisplayName("Se o usuário inserir uma uri valida acima do limite de uris permitido para conta deve " +
+            "retornar 400 BAD_REQUEST com mensagem de erro.")
     public void whenUserPostValidURIAboveUserLimit_shouldReturnErrorMessage400BadRequest() {
         mockMvc.perform(post("/user/urls/new")
                         .accept(MediaType.TEXT_HTML)
@@ -584,8 +601,8 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
-    public void whenUserPostEmptyURI_shouldReturnErrorMessage200Ok() {
+    @DisplayName("Se o o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
+    public void whenUserPostEmptyURI_shouldReturnErrorMessage400BadRequest() {
         final URI EMPTY_URI = URI.create("");
 
         mockMvc.perform(post("/user/urls/new")
@@ -605,7 +622,7 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post inserir uma URI valida sem slug deve codificar a URI retornar 302 FOUND.")
+    @DisplayName("Se o o usuário post inserir uma URI valida sem slug deve codificar a URI retornar 302 FOUND.")
     public void whenUserPostEmptySlugAndValidURI_shouldEncodeURIReturn302Found() {
         final URI VALID_URI = URI.create("https://localhost/something2");
 
@@ -623,8 +640,8 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Quando o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
-    public void whenUserPostEmptySlugAndinvalidURI_shouldReturn400BadRequest() {
+    @DisplayName("Se o o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
+    public void whenUserPostEmptySlugAndInvalidURI_shouldReturn400BadRequest() {
         for (String invalidUri : getInvalidUris()) {
             mockMvc.perform(post("/user/urls/new")
                             .accept(MediaType.TEXT_HTML)
