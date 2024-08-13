@@ -41,8 +41,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties = {"SUPPORTED_PROTOCOLS = https,http,sftp"})
+@DirtiesContext
 @AutoConfigureMockMvc
+@SpringBootTest(properties = {"SUPPORTED_PROTOCOLS = https,http,sftp"})
 public class ShortUrlControllerTest {
 
     public static final Long USER_ID = 2L;
@@ -86,7 +87,7 @@ public class ShortUrlControllerTest {
         ShortzUser urlLimitedOwner = ShortzUser.builder()
                 .username(USER_URL_LIMIT_1_USERNAME)
                 .email(USER_EMAIL + "z")
-                .urlCount(1)
+                .urlCount(1) // Limited
                 .password(passwordEncoder.encode(USER_PASSWORD))
                 .id(USER_ID + 1)
                 .role(ADMIN).enabled(true).build();
@@ -158,14 +159,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteUrl_shouldRemoveSpecifiedUrl() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/urls/delete").with(csrf())
@@ -173,7 +174,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isFalse();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isFalse();
     }
 
     @Test
@@ -184,14 +185,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(false);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/urls/delete").with(csrf())
@@ -199,7 +200,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
     @Test
@@ -211,7 +212,7 @@ public class ShortUrlControllerTest {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final long THIS_ID_DOES_NOT_EXIST = 99999L;
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
@@ -219,7 +220,7 @@ public class ShortUrlControllerTest {
         when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(THIS_ID_DOES_NOT_EXIST);
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/urls/delete").with(csrf())
@@ -227,7 +228,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
     @Test
@@ -238,14 +239,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUrlManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/urls/delete").with(csrf())
@@ -253,7 +254,7 @@ public class ShortUrlControllerTest {
                         .param("id", MALFORMED_UUID))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
 
@@ -311,14 +312,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteSystemUrl_shouldRemoveSpecifiedUrl() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
@@ -326,7 +327,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isFalse();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isFalse();
     }
 
     @Test
@@ -337,14 +338,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetSystemUrlManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(false);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
@@ -352,7 +353,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
     @Test
@@ -364,7 +365,7 @@ public class ShortUrlControllerTest {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final long THIS_ID_DOES_NOT_EXIST = 99999L;
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
@@ -372,7 +373,7 @@ public class ShortUrlControllerTest {
         when(uuidToShortUrlIdMapMock.get(TEST_UUID)).thenReturn(THIS_ID_DOES_NOT_EXIST);
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
@@ -380,7 +381,7 @@ public class ShortUrlControllerTest {
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
     @Test
@@ -391,14 +392,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostDeleteMalformedUUID_shouldRedirectGetSystemUrlManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
-        shortUrlRepository.save(testUrl);
+        final ShortUrl saved = shortUrlRepository.save(testUrl);
 
         // When
         final var uuidToShortUrlIdMapMock = mock(Map.class);
-        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(URL_ID);
+        when(uuidToShortUrlIdMapMock.get(MALFORMED_UUID)).thenReturn(saved.getId());
         when(uuidToShortUrlIdMapMock.containsKey(any())).thenReturn(true);
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
         mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
@@ -406,7 +407,7 @@ public class ShortUrlControllerTest {
                         .param("id", MALFORMED_UUID))
                 .andExpect(status().isFound());
 
-        assertThat(shortUrlRepository.existsById(URL_ID)).isTrue();
+        assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
     }
 
     // *********************************
