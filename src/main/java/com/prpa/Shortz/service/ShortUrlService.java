@@ -73,6 +73,7 @@ public class ShortUrlService {
     }
 
     public boolean isUrlCountOverLimit(ShortzUser owner, Integer limit) {
+        if (limit.equals(ShortzUser.UNLIMITED_URL_COUNT)) return false;
         return shortUrlRepository.countByOwner(owner) >= limit;
     }
 }

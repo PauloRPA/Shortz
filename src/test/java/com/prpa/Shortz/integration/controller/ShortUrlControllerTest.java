@@ -287,6 +287,7 @@ public class ShortUrlControllerTest {
 
     @Test
     @SneakyThrows
+    @DirtiesContext
     @WithMockUser(roles = "ADMIN")
     @DisplayName("Se o o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
     public void whenUserGetSystemUrlManagementWithNonexistentPage_shouldRedirectToP0() {
