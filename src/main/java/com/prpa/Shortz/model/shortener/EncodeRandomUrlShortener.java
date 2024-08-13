@@ -48,7 +48,7 @@ public class EncodeRandomUrlShortener implements UrlShortener {
         Objects.requireNonNull(dictionary, "Dictionary must not be null.");
         Objects.requireNonNull(random, "Random must not be null.");
         Objects.requireNonNull(stringEncoder, "stringEncoder must not be null.");
-        if (supportedProtocols.isEmpty()) throw new IllegalArgumentException("Supported protocols must not be empty.");
+        if (supportedProtocols == null) throw new IllegalArgumentException("Supported protocols must not be null.");
         if (windowSize < 1) throw new IllegalArgumentException("windowSize must not be less than 1.");
 
         this.windowSize = windowSize;
