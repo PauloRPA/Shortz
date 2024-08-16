@@ -1,11 +1,11 @@
 const newUrlForm = document.getElementById('newUrlForm')
 
 const generateSlugBtn = document.getElementById('generate_slug')
-const urlTextField = document.getElementById('url')
+const urlTextField = document.getElementById('uri')
 const slugTextField = document.getElementById('slug')
 
 const errorMessageElement = document.getElementById('invalidSlug')
-const generateSlugUrl = '/user/urls/generate'
+const generateSlugUrl = '/user/uris/generate'
 const EMPTY = ''
 
 function getFirstLine(input) {
@@ -17,15 +17,15 @@ function getFirstLine(input) {
     return text
 }
 
-async function fetchSlug(url, params) {
-    if (!params.url) return Promise.reject(EMPTY)
+async function fetchSlug(uri, params) {
+    if (!params.uri) return Promise.reject(EMPTY)
     if (!params) return Promise.reject(EMPTY)
 
     const csrfToken = document.querySelector("meta[name='_csrf']").content
     const csrfHeader = document.querySelector("meta[name='_csrf_header']").content
 
     try {
-        const response = await fetch(`${url}`, {
+        const response = await fetch(`${uri}`, {
             method: 'POST',
             headers: {
                 [csrfHeader]: csrfToken,
@@ -64,7 +64,7 @@ generateSlugBtn.onclick = (event) => {
     event.preventDefault()
 
     const params = {
-        url: urlTextField.value
+        uri: urlTextField.value
     }
     fetchSlug(generateSlugUrl, params).then(setSlugField, showErrorFetchingSlug)
 }

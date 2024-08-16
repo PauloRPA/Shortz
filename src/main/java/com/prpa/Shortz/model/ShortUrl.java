@@ -41,6 +41,6 @@ public class ShortUrl {
 
     @NotNull
     @Column(name = "url", updatable = false)
-    private String url;
+    private String uri;
 
 }

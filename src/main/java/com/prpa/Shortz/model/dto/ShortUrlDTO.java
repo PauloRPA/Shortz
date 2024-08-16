@@ -30,5 +30,5 @@ public class ShortUrlDTO {
     private String slug;
 
     @NotNull
-    private URI url;
+    private URI uri;
 }

@@ -81,13 +81,13 @@ public class ShortUrlControllerTest {
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
                 .password(passwordEncoder.encode(USER_PASSWORD))
-                .id(USER_ID).urlCount(UNLIMITED_URL_COUNT)
+                .id(USER_ID).urlCreationLimit(UNLIMITED_URL_COUNT)
                 .role(ADMIN).enabled(true).build();
 
         ShortzUser urlLimitedOwner = ShortzUser.builder()
                 .username(USER_URL_LIMIT_1_USERNAME)
                 .email(USER_EMAIL + "z")
-                .urlCount(1) // Limited
+                .urlCreationLimit(1) // Limited
                 .password(passwordEncoder.encode(USER_PASSWORD))
                 .id(USER_ID + 1)
                 .role(ADMIN).enabled(true).build();
@@ -98,7 +98,7 @@ public class ShortUrlControllerTest {
                 .creationTimestamp(URL_CREATION_TIMESTAMP)
                 .hit(URL_HITS)
                 .slug(URL_SLUG)
-                .url(URL_STRING)
+                .uri(URL_STRING)
                 .build();
 
         shortzUserRepository.save(urlOwner);
@@ -113,23 +113,23 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuario acionar a pagina para listar as suas urls.")
-    public void whenUserGetUrlManagement_shouldSucceed() {
-        mockMvc.perform(get("/user/urls")
+    public void whenUserGetUriManagement_shouldSucceed() {
+        mockMvc.perform(get("/user/uris")
                         .accept(MediaType.TEXT_HTML))
-                .andExpect(model().attributeExists("urlsPage"))
+                .andExpect(model().attributeExists("urisPage"))
                 .andExpect(status().isOk());
     }
 
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Se o o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
-    public void whenUserGetUrlManagementWithNoUrls_shouldSucceed() {
+    @DisplayName("Se o o usuário acionar a pagina para listar as suas uris mas não há uris disponíveis.")
+    public void whenUserGetUriManagementWithNoUris_shouldSucceed() {
         shortUrlRepository.deleteAll();
 
-        mockMvc.perform(get("/user/urls")
+        mockMvc.perform(get("/user/uris")
                         .accept(MediaType.TEXT_HTML))
-                .andExpect(model().attributeExists("urlsPage"))
+                .andExpect(model().attributeExists("urisPage"))
                 .andExpect(status().isOk());
     }
 
@@ -138,10 +138,10 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário acionar a pagina que não existe deve redirecionar á pagina 0.")
-    public void whenUserGetUrlManagementWithNonexistentPage_shouldRedirectToP0() {
+    public void whenUserGetUriManagementWithNonexistentPage_shouldRedirectToP0() {
         shortUrlRepository.save(testUrl);
         String PAGE_THAT_DOES_NOT_EXIST = "999";
-        mockMvc.perform(get("/user/urls")
+        mockMvc.perform(get("/user/uris")
                         .param("p", PAGE_THAT_DOES_NOT_EXIST)
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isFound());
@@ -156,7 +156,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url deve remover a url corretamente.")
-    public void whenUserPostDeleteUrl_shouldRemoveSpecifiedUrl() {
+    public void whenUserPostDeleteUri_shouldRemoveSpecifiedUri() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -169,7 +169,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -182,7 +182,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUrlManagement() {
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetUriManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -195,7 +195,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -208,7 +208,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetUrlManagement() {
+    public void whenUserPostDeleteNonexistentUri_shouldRedirectGetUriManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final long THIS_ID_DOES_NOT_EXIST = 99999L;
@@ -223,7 +223,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -236,7 +236,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUrlManagement() {
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetUriManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -249,8 +249,8 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/urls/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+        mockMvc.perform(post("/user/uris/delete").with(csrf())
+                        .sessionAttr("uuidShortUriIdMap", uuidToShortUrlIdMapMock)
                         .param("id", MALFORMED_UUID))
                 .andExpect(status().isFound());
 
@@ -259,30 +259,30 @@ public class ShortUrlControllerTest {
 
 
     // *********************************
-    // GET System URLs management panel
+    // GET System URIs management panel
     // *********************************
 
     @Test
     @SneakyThrows
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Se o o usuario acionar a pagina para listar as urls do sistema.")
-    public void whenUserGetSystemUrlManagement_shouldSucceed() {
-        mockMvc.perform(get("/user/adm/urls")
+    @DisplayName("Se o o usuario acionar a pagina para listar as uris do sistema.")
+    public void whenUserGetSystemUriManagement_shouldSucceed() {
+        mockMvc.perform(get("/user/adm/uris")
                         .accept(MediaType.TEXT_HTML))
-                .andExpect(model().attributeExists("urlsPage"))
+                .andExpect(model().attributeExists("urisPage"))
                 .andExpect(status().isOk());
     }
 
     @Test
     @SneakyThrows
     @WithMockUser(roles = "ADMIN")
-    @DisplayName("Se o o usuário acionar a pagina para listar as suas urls mas não há urls disponíveis.")
-    public void whenUserGetSystemUrlManagementWithNoUrls_shouldSucceed() {
+    @DisplayName("Se o o usuário acionar a pagina para listar as suas uris mas não há uris disponíveis.")
+    public void whenUserGetSystemUriManagementWithNoUris_shouldSucceed() {
         shortUrlRepository.deleteAll();
 
-        mockMvc.perform(get("/user/adm/urls")
+        mockMvc.perform(get("/user/adm/uris")
                         .accept(MediaType.TEXT_HTML))
-                .andExpect(model().attributeExists("urlsPage"))
+                .andExpect(model().attributeExists("urisPage"))
                 .andExpect(status().isOk());
     }
 
@@ -294,7 +294,7 @@ public class ShortUrlControllerTest {
     public void whenUserGetSystemUrlManagementWithNonexistentPage_shouldRedirectToP0() {
         shortUrlRepository.save(testUrl);
         String PAGE_THAT_DOES_NOT_EXIST = "999";
-        mockMvc.perform(get("/user/adm/urls")
+        mockMvc.perform(get("/user/adm/uris")
                         .param("p", PAGE_THAT_DOES_NOT_EXIST)
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isFound());
@@ -309,7 +309,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url deve remover a url corretamente.")
-    public void whenUserPostDeleteSystemUrl_shouldRemoveSpecifiedUrl() {
+    public void whenUserPostDeleteSystemUri_shouldRemoveSpecifiedUri() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -322,7 +322,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -335,7 +335,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetSystemUrlManagement() {
+    public void whenUserPostDeleteWithInvalidUUID_shouldRedirectGetSystemUriManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -348,7 +348,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -361,7 +361,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url que não existe deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteNonexistentUrl_shouldRedirectGetSystemUrlManagement() {
+    public void whenUserPostDeleteNonexistentUri_shouldRedirectGetSystemUriManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
         final long THIS_ID_DOES_NOT_EXIST = 99999L;
@@ -376,7 +376,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
@@ -389,7 +389,7 @@ public class ShortUrlControllerTest {
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o usuário confirmar a deleção de uma url com UUID invalido deve redirecionar á pagina de urlManagement.")
-    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetSystemUrlManagement() {
+    public void whenUserPostDeleteMalformedUUID_shouldRedirectGetSystemUriManagement() {
         //Given
         final String MALFORMED_UUID = "thisIsAMalformedUUID";
         final ShortUrl saved = shortUrlRepository.save(testUrl);
@@ -402,7 +402,7 @@ public class ShortUrlControllerTest {
         assertThat(shortUrlRepository.existsById(saved.getId())).isTrue();
 
         // Then
-        mockMvc.perform(post("/user/adm/urls/delete").with(csrf())
+        mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
                         .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
                         .param("id", MALFORMED_UUID))
                 .andExpect(status().isFound());
@@ -418,8 +418,8 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @WithAnonymousUser
     @DisplayName("Se o alguém anonimo get o form para criar uma nova url 302 Found para /user/login.")
-    public void whenAnonymousGetNewUrlForm_shouldOk() {
-        mockMvc.perform(get("/user/urls/new")
+    public void whenAnonymousGetNewUriForm_shouldOk() {
+        mockMvc.perform(get("/user/uris/new")
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isFound())
                 .andExpect(redirectedUrlPattern("**/user/login"));
@@ -429,8 +429,8 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário get o form para criar uma nova url deve 200 OK.")
-    public void whenUserGetNewUrlForm_shouldOk() {
-        mockMvc.perform(get("/user/urls/new")
+    public void whenUserGetNewUriForm_shouldOk() {
+        mockMvc.perform(get("/user/uris/new")
                         .accept(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
     }
@@ -452,14 +452,14 @@ public class ShortUrlControllerTest {
                 prefixedUri = URI.create("http://" + validUri);
             }
 
-            Optional<String> encodedUrl = urlShortener.encodeUrl(prefixedUri);
-            assertThat(encodedUrl).isPresent();
-            String expectedString = encodedUrl.get();
+            Optional<String> encodedUri = urlShortener.encodeUri(prefixedUri);
+            assertThat(encodedUri).isPresent();
+            String expectedString = encodedUri.get();
 
-            mockMvc.perform(post("/user/urls/generate")
+            mockMvc.perform(post("/user/uris/generate")
                             .accept(MediaType.TEXT_PLAIN)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"url\": \"%s\"}".formatted(validUri.toString()))
+                            .content("{\"uri\": \"%s\"}".formatted(validUri.toString()))
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
@@ -472,9 +472,9 @@ public class ShortUrlControllerTest {
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário post para gerar slug com uri vazia deve retornar vazio 400 BAD_REQUEST.")
     public void whenUserGenerateSlugFromEmptyUri_shouldReturnEmpty() {
-        String[] EMPTY_URIS = {"", "{\"url\": \"\"}"};
+        String[] EMPTY_URIS = {"", "{\"uri\": \"\"}"};
         for (String emptyUri : EMPTY_URIS) {
-            mockMvc.perform(post("/user/urls/generate")
+            mockMvc.perform(post("/user/uris/generate")
                             .accept(MediaType.TEXT_PLAIN)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(emptyUri)
@@ -491,8 +491,8 @@ public class ShortUrlControllerTest {
     @DisplayName("Se o o usuário post para gerar slug com uri invalida deve retornar 400 BAD_REQUEST.")
     public void whenUserGenerateSlugFromInvalidUri_shouldReturnEmpty() {
         for (String invalidUri : getInvalidUris()) {
-            String invalidUriRequestBody = "{\"url\": \"%s\"}".formatted(invalidUri);
-            mockMvc.perform(post("/user/urls/generate")
+            String invalidUriRequestBody = "{\"uri\": \"%s\"}".formatted(invalidUri);
+            mockMvc.perform(post("/user/uris/generate")
                             .accept(MediaType.TEXT_PLAIN)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(invalidUriRequestBody)
@@ -520,18 +520,18 @@ public class ShortUrlControllerTest {
                 prefixedUri = URI.create("http://" + validUri);
             }
 
-            Optional<String> encodedUrl = urlShortener.encodeUrl(prefixedUri);
-            assertThat(encodedUrl).isPresent();
-            String encodedSlug = encodedUrl.get();
+            Optional<String> encodedUri = urlShortener.encodeUri(prefixedUri);
+            assertThat(encodedUri).isPresent();
+            String encodedSlug = encodedUri.get();
 
-            mockMvc.perform(post("/user/urls/new")
+            mockMvc.perform(post("/user/uris/new")
                             .accept(MediaType.TEXT_HTML)
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                            .param("url", prefixedUri.toString())
+                            .param("uri", prefixedUri.toString())
                             .param("slug", encodedSlug)
                             .with(csrf()))
                     .andExpect(status().isFound())
-                    .andExpect(redirectedUrl("/user/urls"));
+                    .andExpect(redirectedUrl("/user/uris"));
         }
     }
 
@@ -544,30 +544,30 @@ public class ShortUrlControllerTest {
                 URI.create("https://localhost:6969/something"),
                 URI.create("http://localhost:6969/something")};
 
-        Optional<String> encodedUrl = urlShortener.encodeUrl(repeatedURIS[0]);
-        assertThat(encodedUrl).isPresent();
-        String encodedSlug = encodedUrl.get();
+        Optional<String> encodedUri = urlShortener.encodeUri(repeatedURIS[0]);
+        assertThat(encodedUri).isPresent();
+        String encodedSlug = encodedUri.get();
 
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", repeatedURIS[0].toString())
+                        .param("uri", repeatedURIS[0].toString())
                         .param("slug", encodedSlug)
                         .with(csrf()))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/user/urls"));
+                .andExpect(redirectedUrl("/user/uris"));
 
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", repeatedURIS[1].toString())
+                        .param("uri", repeatedURIS[1].toString())
                         .with(csrf()))
                 .andExpect(status().isBadRequest())
-                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(view().name("/user/uris/newUri"))
                 .andExpect(model().hasErrors())
                 .andExpect(model().errorCount(1))
-                .andExpect(model().attributeHasFieldErrors("newUrlForm", "slug"))
-                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "slug", "slug.exists"));
+                .andExpect(model().attributeHasFieldErrors("newUriForm", "slug"))
+                .andExpect(model().attributeHasFieldErrorCode("newUriForm", "slug", "slug.exists"));
     }
 
     @Test
@@ -576,28 +576,28 @@ public class ShortUrlControllerTest {
     @DisplayName("Se o usuário inserir uma uri valida acima do limite de uris permitido para conta deve " +
             "retornar 400 BAD_REQUEST com mensagem de erro.")
     public void whenUserPostValidURIAboveUserLimit_shouldReturnErrorMessage400BadRequest() {
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", "https://localhost.io/testing")
+                        .param("uri", "https://localhost.io/testing")
                         .param("slug", "abcdef")
                         .with(csrf()))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/user/urls"));
+                .andExpect(redirectedUrl("/user/uris"));
 
         // This request will exceed the limit of one URL that the current user can add
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", "https://localhost.io/user/can/add/just/one/url")
+                        .param("uri", "https://localhost.io/user/can/add/just/one/url")
                         .param("slug", "zyxwvu")
                         .with(csrf()))
                 .andExpect(status().isBadRequest())
-                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(view().name("/user/uris/newUri"))
                 .andExpect(model().hasErrors())
                 .andExpect(model().errorCount(1))
-                .andExpect(model().attributeHasFieldErrors("newUrlForm", "slug"))
-                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "slug", "error.newUrlForm.user.limit"));
+                .andExpect(model().attributeHasFieldErrors("newUriForm", "slug"))
+                .andExpect(model().attributeHasFieldErrorCode("newUriForm", "slug", "error.newUriForm.user.limit"));
     }
 
     @Test
@@ -605,7 +605,6 @@ public class ShortUrlControllerTest {
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
     public void whenUserPostEmptyURI_shouldReturnErrorMessage400BadRequest() {
-        final URI EMPTY_URI = URI.create("");
         mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -618,18 +617,18 @@ public class ShortUrlControllerTest {
                 .andExpect(model().attributeHasFieldErrors("newUriForm", "uri"))
                 .andExpect(model().attributeHasFieldErrorCode("newUriForm", "uri", "NotBlank"));
 
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("uri", "")
                         .param("slug", "testslug")
                         .with(csrf()))
                 .andExpect(status().isBadRequest())
-                .andExpect(view().name("/user/urls/newUrl"))
+                .andExpect(view().name("/user/uris/newUri"))
                 .andExpect(model().hasErrors())
                 .andExpect(model().errorCount(1))
-                .andExpect(model().attributeHasFieldErrors("newUrlForm", "url"))
-                .andExpect(model().attributeHasFieldErrorCode("newUrlForm", "url", "NotBlank"));
+                .andExpect(model().attributeHasFieldErrors("newUriForm", "uri"))
+                .andExpect(model().attributeHasFieldErrorCode("newUriForm", "uri", "NotBlank"));
     }
 
     @Test
@@ -639,14 +638,14 @@ public class ShortUrlControllerTest {
     public void whenUserPostEmptySlugAndValidURI_shouldEncodeURIReturn302Found() {
         final URI VALID_URI = URI.create("https://localhost/something2");
 
-        mockMvc.perform(post("/user/urls/new")
+        mockMvc.perform(post("/user/uris/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", VALID_URI.toString())
+                        .param("uri", VALID_URI.toString())
                         .param("slug", "")
                         .with(csrf()))
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/user/urls"))
+                .andExpect(redirectedUrl("/user/uris"))
                 .andExpect(model().hasNoErrors());
     }
 
@@ -656,16 +655,16 @@ public class ShortUrlControllerTest {
     @DisplayName("Se o o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
     public void whenUserPostEmptySlugAndInvalidURI_shouldReturn400BadRequest() {
         for (String invalidUri : getInvalidUris()) {
-            mockMvc.perform(post("/user/urls/new")
+            mockMvc.perform(post("/user/uris/new")
                             .accept(MediaType.TEXT_HTML)
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                            .param("url", invalidUri)
+                            .param("uri", invalidUri)
                             .param("slug", "")
                             .with(csrf()))
                     .andExpect(status().isBadRequest())
                     .andExpect(model().hasErrors())
-                    .andExpect(model().attributeErrorCount("newUrlForm", 1))
-                    .andExpect(model().attributeHasFieldErrors("newUrlForm", "url"))
+                    .andExpect(model().attributeErrorCount("newUriForm", 1))
+                    .andExpect(model().attributeHasFieldErrors("newUriForm", "uri"))
                     .andDo(print());
         }
     }

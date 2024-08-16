@@ -155,7 +155,7 @@ public class ShortzUserController {
         ShortzUserDTO form = ShortzUserDTO.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .urlCount(user.getUrlCount())
+                .urlCreationLimit(user.getUrlCreationLimit())
                 .role(user.getRole())
                 .enabled(user.getEnabled())
                 .id(userUUID)

@@ -59,14 +59,14 @@
                             </div>
                             <!-- Url count -->
                             <div class="mb-3">
-                                <label th:text="#{ui.user.urlcount}" for="urlCount" class="form-label">Url count</label>
+                                <label th:text="#{ui.user.urlCreationLimit}" for="urlCreationLimit" class="form-label">Url count</label>
 
-                                <input th:field="*{urlCount}"
-                                    th:classappend="${#fields.hasErrors('urlCount')}? is-invalid" th:value="*{urlCount}"
-                                    class="form-control bg-dark-subtle" type="text" name="urlCount"
-                                    th:placeholder="#{ui.user.urlcount}" id="urlCount">
+                                <input th:field="*{urlCreationLimit}"
+                                    th:classappend="${#fields.hasErrors('urlCreationLimit')}? is-invalid" th:value="*{urlCreationLimit}"
+                                    class="form-control bg-dark-subtle" type="text" name="urlCreationLimit"
+                                    th:placeholder="#{ui.user.urlCreationLimit}" id="urlCreationLimit">
 
-                                <div th:classappend="invalid-feedback" th:each="err: ${#fields.errors('urlCount')}"
+                                <div th:classappend="invalid-feedback" th:each="err: ${#fields.errors('urlCreationLimit')}"
                                     th:text="${err}">
                                 </div>
                             </div>

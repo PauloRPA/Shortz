@@ -24,12 +24,12 @@
                     <a th:text="#{menu.nav.link.home}" href="/" class="nav-link btn btn-secondary">Home</a>
                 </li>
                 <li class="nav-item m-2">
-                    <a th:text="#{menu.nav.link.urls}" th:href="@{/user/urls}" sec:authorize="isAuthenticated()"
+                    <a th:text="#{menu.nav.link.urls}" th:href="@{/user/uris}" sec:authorize="isAuthenticated()"
                         class="nav-link btn btn-secondary">
                         Short urls</a>
                 </li>
                 <li class="nav-item m-2">
-                    <a th:text="#{menu.nav.link.system.urls}" th:href="@{/user/adm/urls}"
+                    <a th:text="#{menu.nav.link.system.urls}" th:href="@{/user/adm/uris}"
                         sec:authorize="isAuthenticated() && hasRole('ADMIN')" class="nav-link btn btn-secondary">
                         Manage system urls</a>
                 </li>

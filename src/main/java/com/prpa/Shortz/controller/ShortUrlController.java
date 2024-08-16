@@ -52,57 +52,60 @@ public class ShortUrlController {
         return new HashMap<>();
     }
 
-    @GetMapping("/urls/new")
-    public ModelAndView getNewUrl(Model model) {
-        model.addAttribute("newUrlForm", new ShortUrlForm());
+    @GetMapping("/uris/new")
+    public ModelAndView getNewUri(Model model) {
+        model.addAttribute("newUriForm", new ShortUrlForm());
         ModelAndView mav = new ModelAndView();
-        mav.setViewName("user/urls/newUrl");
+        mav.setViewName("user/uris/newUri");
         return mav;
     }
 
-    @PostMapping("/urls/new")
-    public ModelAndView postNewUrl(@Valid @ModelAttribute("newUrlForm") ShortUrlForm form,
+    @PostMapping("/uris/new")
+    public ModelAndView postNewUri(@Valid @ModelAttribute("newUriForm") ShortUrlForm form,
                                    BindingResult result,
                                    @AuthenticationPrincipal ShortzUser owner) {
         ModelAndView mav = new ModelAndView();
 
-        Optional<URI> uri = validateUri(form.getUrl().trim());
+        Optional<URI> uri = Optional.empty();
+        if (form.getUri() != null) {
+            uri = validateUri(form.getUri().trim());
+        }
 
-        if (uri.isEmpty() && result.getFieldErrors("url").isEmpty()) {
-            result.rejectValue("url", "error.newUrlForm.url.invalid");
+        if (uri.isEmpty() && result.getFieldErrors("uri").isEmpty()) {
+            result.rejectValue("uri", "error.newUriForm.uri.invalid");
         }
 
         if (uri.isPresent() && !urlShortener.getSupportedProtocols().contains(uri.get().getScheme())) {
-            result.rejectValue("url", "error.newUrlForm.url.unsupported.protocol");
+            result.rejectValue("uri", "error.newUriForm.uri.unsupported.protocol");
         }
 
-        if (!result.getFieldErrors("url").isEmpty()) {
+        if (!result.getFieldErrors("uri").isEmpty()) {
             result.getModel().forEach(mav.getModelMap()::addAttribute);
-            mav.setViewName("/user/urls/newUrl");
+            mav.setViewName("/user/uris/newUri");
             mav.setStatus(HttpStatus.BAD_REQUEST);
             return mav;
         }
 
         String slug = form.getSlug();
         if ((slug == null || slug.isBlank()) && uri.isPresent()) {
-            slug = urlShortener.encodeUrl(uri.get()).orElse("");
+            slug = urlShortener.encodeUri(uri.get()).orElse("");
         }
 
         if (slug == null || slug.isBlank()) {
-            result.rejectValue("slug", "error.newUrlForm.slug.encoding");
+            result.rejectValue("slug", "error.newUriForm.slug.encoding");
         }
 
         if (result.getFieldErrors("slug").isEmpty() && shortUrlService.existsBySlug(slug)) {
             result.rejectValue("slug", "slug.exists");
         }
 
-        if (shortUrlService.isUrlCountOverLimit(owner, owner.getUrlCount())) {
-            result.rejectValue("slug", "error.newUrlForm.user.limit");
+        if (shortUrlService.isUrlCreationOverLimit(owner, owner.getUrlCreationLimit())) {
+            result.rejectValue("slug", "error.newUriForm.user.limit");
         }
 
         if (result.hasErrors()) {
             result.getModel().forEach(mav.getModelMap()::addAttribute);
-            mav.setViewName("/user/urls/newUrl");
+            mav.setViewName("/user/uris/newUri");
             mav.setStatus(HttpStatus.BAD_REQUEST);
             return mav;
         }
@@ -110,26 +113,26 @@ public class ShortUrlController {
 
         shortUrlService.save(uri.get(), form, owner);
 
-        mav.setViewName("redirect:/user/urls");
+        mav.setViewName("redirect:/user/uris");
         return mav;
     }
 
-    @GetMapping("/urls")
-    public String getUrls(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
+    @GetMapping("/uris")
+    public String getUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                           @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
                           Model model) {
 
         ShortzUser currentUser = (ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<ShortUrlDTO> urls = shortUrlService.findAllUrlsByUserToDTO(pageParam, DEFAULT_PAGE_SIZE, currentUser);
-        model.addAttribute("urlsPage", urls);
+        Page<ShortUrlDTO> uris = shortUrlService.findAllUrlsByUserToDTO(pageParam, DEFAULT_PAGE_SIZE, currentUser);
+        model.addAttribute("urisPage", uris);
 
-        if (urls.getTotalPages() > 0 && pageParam > urls.getTotalPages()) {
-            return "redirect:/user/urls";
+        if (uris.getTotalPages() > 0 && pageParam > uris.getTotalPages()) {
+            return "redirect:/user/uris";
         }
 
         uuidShortUrlIdMap.clear();
-        urls.forEach(url -> {
+        uris.forEach(url -> {
             UUID randomUUID = UUID.randomUUID();
             String urlId = url.getId();
             url.setId(randomUUID.toString());
@@ -137,25 +140,25 @@ public class ShortUrlController {
             uuidShortUrlIdMap.put(randomUUID, Long.parseLong(urlId));
         });
 
-        if (urls.getTotalPages() > 1) {
-            int currentPage = urls.getNumber();
+        if (uris.getTotalPages() > 1) {
+            int currentPage = uris.getNumber();
 
             List<Integer> pagination =
                     IntStream.rangeClosed(
                                     currentPage - NUMBER_PAGINATION_OPTIONS / 2,
                                     currentPage + NUMBER_PAGINATION_OPTIONS / 2)
                             .boxed()
-                            .filter(pag -> pag < urls.getTotalPages())
+                            .filter(pag -> pag < uris.getTotalPages())
                             .filter(pag -> pag >= 0)
                             .collect(Collectors.toList());
 
             model.addAttribute("pagination", pagination);
         }
 
-        return "user/urls/url_management";
+        return "user/uris/uri_management";
     }
 
-    @PostMapping("/urls/delete")
+    @PostMapping("/uris/delete")
     public ModelAndView postDeleteUser(@RequestParam("id") UUID shortUrlUUID,
                                        @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
                                        RedirectAttributes redirectAttributes) {
@@ -163,7 +166,7 @@ public class ShortUrlController {
         ModelAndView mav = new ModelAndView();
 
         final UriComponents urlManagementUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortUrlController.class, "getUrls", null, null, null)
+                .fromMethodName(ShortUrlController.class, "getUris", null, null, null)
                 .buildAndExpand();
 
         if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
@@ -175,85 +178,85 @@ public class ShortUrlController {
         Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
 
         shortUrlService.deleteById(shortUrlId);
-        redirectAttributes.addFlashAttribute("message", "url.deleted");
+        redirectAttributes.addFlashAttribute("message", "uri.deleted");
         redirectAttributes.addFlashAttribute("messageType", "success");
         mav.setViewName("redirect:" + urlManagementUri);
         return mav;
     }
 
-    @GetMapping("/adm/urls")
-    public String getSystemUrls(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
+    @GetMapping("/adm/uris")
+    public String getSystemUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                                 @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
                                 Model model) {
 
-        Page<ShortUrlDTO> urls = shortUrlService.findAllToDTO(pageParam, DEFAULT_PAGE_SIZE);
-        model.addAttribute("urlsPage", urls);
+        Page<ShortUrlDTO> uris = shortUrlService.findAllToDTO(pageParam, DEFAULT_PAGE_SIZE);
+        model.addAttribute("urisPage", uris);
 
-        if (urls.getTotalPages() > 0 && pageParam > urls.getTotalPages()) {
-            return "redirect:/user/adm/urls";
+        if (uris.getTotalPages() > 0 && pageParam > uris.getTotalPages()) {
+            return "redirect:/user/adm/uris";
         }
 
         uuidShortUrlIdMap.clear();
-        urls.forEach(url -> {
+        uris.forEach(uri -> {
             UUID randomUUID = UUID.randomUUID();
-            String urlId = url.getId();
-            url.setId(randomUUID.toString());
+            String uriId = uri.getId();
+            uri.setId(randomUUID.toString());
 
-            uuidShortUrlIdMap.put(randomUUID, Long.parseLong(urlId));
+            uuidShortUrlIdMap.put(randomUUID, Long.parseLong(uriId));
         });
 
-        if (urls.getTotalPages() > 1) {
-            int currentPage = urls.getNumber();
+        if (uris.getTotalPages() > 1) {
+            int currentPage = uris.getNumber();
 
             List<Integer> pagination =
                     IntStream.rangeClosed(
                                     currentPage - NUMBER_PAGINATION_OPTIONS / 2,
                                     currentPage + NUMBER_PAGINATION_OPTIONS / 2)
                             .boxed()
-                            .filter(pag -> pag < urls.getTotalPages())
+                            .filter(pag -> pag < uris.getTotalPages())
                             .filter(pag -> pag >= 0)
                             .collect(Collectors.toList());
 
             model.addAttribute("pagination", pagination);
         }
 
-        return "user/adm/adm_url_management";
+        return "user/adm/adm_uri_management";
     }
 
-    @PostMapping("adm/urls/delete")
+    @PostMapping("adm/uris/delete")
     public ModelAndView postDeleteSystemUrl(@RequestParam("id") UUID shortUrlUUID,
                                             @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
                                             RedirectAttributes redirectAttributes) {
 
         ModelAndView mav = new ModelAndView();
 
-        final UriComponents systemUrlManagementUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortUrlController.class, "getSystemUrls", null, null, null)
+        final UriComponents systemUriManagementUri = MvcUriComponentsBuilder
+                .fromMethodName(ShortUrlController.class, "getSystemUris", null, null, null)
                 .buildAndExpand();
 
         if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
             uuidShortUrlIdMap.clear();
-            mav.setViewName("redirect:" + systemUrlManagementUri);
+            mav.setViewName("redirect:" + systemUriManagementUri);
             return mav;
         }
 
         Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
 
         shortUrlService.deleteById(shortUrlId);
-        redirectAttributes.addFlashAttribute("message", "url.deleted");
+        redirectAttributes.addFlashAttribute("message", "uri.deleted");
         redirectAttributes.addFlashAttribute("messageType", "success");
-        mav.setViewName("redirect:" + systemUrlManagementUri);
+        mav.setViewName("redirect:" + systemUriManagementUri);
         return mav;
     }
 
     @ResponseBody
-    @PostMapping(value = "/urls/generate", consumes = "application/json", produces = "text/plain")
+    @PostMapping(value = "/uris/generate", consumes = "application/json", produces = "text/plain")
     public String postGenerateSlug(@RequestBody(required = false) Map<String, String> bodyParams) {
         if (bodyParams == null) throw new EmptyUriException("");
-        if (!bodyParams.containsKey("url") || bodyParams.get("url").isBlank()) throw new EmptyUriException("");
+        if (!bodyParams.containsKey("uri") || bodyParams.get("uri").isBlank()) throw new EmptyUriException("");
 
-        String encoded = validateUri(bodyParams.get("url"))
-                .map(validateUri -> urlShortener.encodeUrl(validateUri).orElse(""))
+        String encoded = validateUri(bodyParams.get("uri"))
+                .map(validateUri -> urlShortener.encodeUri(validateUri).orElse(""))
                 .orElse("");
 
         if (encoded.isBlank()) throw new InvalidUriException("");
@@ -267,15 +270,15 @@ public class ShortUrlController {
         try {
             final boolean hasScheme = uriToValidate.contains("://");
             String schemePrefix = hasScheme ? "" : DEFAULT_SCHEME;
-            String fullUrl = schemePrefix + uriToValidate;
+            String fullUri = schemePrefix + uriToValidate;
 
             if (!hasScheme) {
-                new URL(fullUrl);
+                new URL(fullUri);
             }
 
-            if (!fullUrl.contains(".") && !hasScheme) return Optional.empty();
+            if (!fullUri.contains(".") && !hasScheme) return Optional.empty();
 
-            return Optional.of(new URI(fullUrl));
+            return Optional.of(new URI(fullUri));
         } catch (URISyntaxException | MalformedURLException  e) {
             return Optional.empty();
         }

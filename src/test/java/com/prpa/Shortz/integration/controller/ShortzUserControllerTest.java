@@ -61,13 +61,13 @@ public class ShortzUserControllerTest {
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
                 .password(passwordEncoder.encode(USER_PASSWORD))
-                .id(USER_ID).urlCount(UNLIMITED_URL_COUNT)
+                .id(USER_ID).urlCreationLimit(UNLIMITED_URL_COUNT)
                 .role(USER).enabled(true).build();
 
         testUserDTO = ShortzUserDTO.builder()
                 .username(testUser.getUsername())
                 .email(testUser.getEmail())
-                .urlCount(testUser.getUrlCount())
+                .urlCreationLimit(testUser.getUrlCreationLimit())
                 .role(testUser.getRole())
                 .enabled(testUser.getEnabled())
                 .build();
@@ -302,7 +302,7 @@ public class ShortzUserControllerTest {
                         .param("id", String.valueOf(TEST_UUID))
                         .param("username", NEW_USERNAME)
                         .param("email", USER_EMAIL)
-                        .param("urlCount", String.valueOf(-1))
+                        .param("urlCreationLimit", String.valueOf(-1))
                         .param("role", String.valueOf(Role.ADMIN))
                         .param("enabled", String.valueOf(true)))
                 .andExpect(model().hasNoErrors())
@@ -327,7 +327,7 @@ public class ShortzUserControllerTest {
                 .username("thisUsernameAlreadyExist")
                 .email("yay@mail.com")
                 .password(passwordEncoder.encode(USER_PASSWORD))
-                .id(USER_ID + 1).urlCount(UNLIMITED_URL_COUNT)
+                .id(USER_ID + 1).urlCreationLimit(UNLIMITED_URL_COUNT)
                 .role(USER).enabled(true).build();
 
         shortzUserRepository.save(testUser);
@@ -344,7 +344,7 @@ public class ShortzUserControllerTest {
                         .param("id", String.valueOf(TEST_UUID))
                         .param("username", currentTestUsername) //Empty username
                         .param("email", USER_EMAIL)
-                        .param("urlCount", String.valueOf(-1))
+                        .param("urlCreationLimit", String.valueOf(-1))
                         .param("role", String.valueOf(Role.ADMIN))
                         .param("enabled", String.valueOf(true)))
                 .andExpect(model().attributeHasFieldErrors("editForm", "username" ))
@@ -367,7 +367,7 @@ public class ShortzUserControllerTest {
                 .username("User")
                 .email("thisEmailAlready@exists.com")
                 .password(passwordEncoder.encode(USER_PASSWORD))
-                .id(USER_ID + 1).urlCount(UNLIMITED_URL_COUNT)
+                .id(USER_ID + 1).urlCreationLimit(UNLIMITED_URL_COUNT)
                 .role(USER).enabled(true).build();
 
         shortzUserRepository.save(testUser);
@@ -384,7 +384,7 @@ public class ShortzUserControllerTest {
                         .param("id", String.valueOf(TEST_UUID))
                         .param("username", USER_USERNAME) //Empty username
                         .param("email", currentTestEmail)
-                        .param("urlCount", String.valueOf(-1))
+                        .param("urlCreationLimit", String.valueOf(-1))
                         .param("role", String.valueOf(Role.ADMIN))
                         .param("enabled", String.valueOf(true)))
                 .andExpect(model().attributeHasFieldErrors("editForm", "email" ))
@@ -409,7 +409,7 @@ public class ShortzUserControllerTest {
                         .param("id", String.valueOf(TEST_UUID))
                         .param("username", USER_USERNAME)
                         .param("email", USER_EMAIL)
-                        .param("urlCount", String.valueOf(-1))
+                        .param("urlCreationLimit", String.valueOf(-1))
                         .param("role", String.valueOf(Role.ADMIN))
                         .param("enabled", String.valueOf(true)))
                 .andExpect(status().isFound());

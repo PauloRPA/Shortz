@@ -37,8 +37,8 @@ public class ShortzUser implements UserDetails {
     private String email;
 
     @NotNull
-    @Column(name = "url_count", nullable = false)
-    private Integer urlCount;
+    @Column(name = "url_creation_limit", nullable = false)
+    private Integer urlCreationLimit;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "owner")
     private List<ShortUrl> shortUrls;

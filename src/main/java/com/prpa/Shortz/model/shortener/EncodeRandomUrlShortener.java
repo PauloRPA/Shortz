@@ -89,12 +89,12 @@ public class EncodeRandomUrlShortener implements UrlShortener {
     }
 
     @Override
-    public Optional<String> encodeUrl(URI uri) {
+    public Optional<String> encodeUri(URI uri) {
         return encodeUrlToWindowSize(uri, windowSize);
     }
 
     @Override
-    public Optional<String> encodeUrl(URI uri, int increaseWindowBy) {
+    public Optional<String> encodeUri(URI uri, int increaseWindowBy) {
         if (increaseWindowBy < 0) throw new IllegalArgumentException("increaseWindowBy must not be negative.");
         return encodeUrlToWindowSize(uri, windowSize + increaseWindowBy);
     }

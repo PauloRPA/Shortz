@@ -61,7 +61,7 @@
                         <p th:text="${user.email}">email</p>
                     </td>
                     <td class="d-md-table-cell d-none">
-                        <p th:text="${user.urlCount} == -1? #{ui.user.urllimit.unlimited}: ${user.urlCount}">Unlimited
+                        <p th:text="${user.urlCreationLimit} == -1? #{ui.user.urllimit.unlimited}: ${user.urlCreationLimit}">Unlimited
                         </p>
                     </td>
                     <td class="d-md-table-cell d-none">

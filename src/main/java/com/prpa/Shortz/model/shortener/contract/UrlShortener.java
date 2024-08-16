@@ -6,8 +6,8 @@ import java.util.Set;
 
 public interface UrlShortener {
 
-    Optional<String> encodeUrl(URI uri);
-    Optional<String> encodeUrl(URI uri, int increaseWindowBy);
+    Optional<String> encodeUri(URI uri);
+    Optional<String> encodeUri(URI uri, int increaseWindowBy);
 
     int getWindowSize();
 

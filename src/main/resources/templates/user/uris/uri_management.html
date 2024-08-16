@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>System short urls</title>
+    <title>My short urls</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet" />
@@ -25,53 +25,56 @@
     </div>
 
     <div class="container">
+
+        <!-- New url -->
+        <div class="m-3 ">
+            <a class="btn btn-success w-100" th:href="@{/user/uris/new}" th:value="#{menu.nav.btn.uri}">New url</a>
+        </div>
+
         <!-- No urls message -->
-        <div class="mt-5" th:if="${urlsPage.numberOfElements} == 0">
+        <div class="mt-5" th:if="${urisPage.numberOfElements} == 0">
             <h2 class="text-white text-center bg-dark rounded lh-lg" th:text="#{empty.urls}"></h2>
         </div>
 
         <!-- Main table -->
-        <table th:if="${urlsPage.numberOfElements} != 0" class="table table-dark table-striped mt-1">
+        <table th:if="${urisPage.numberOfElements} != 0" class="table table-dark table-striped mt-1">
 
             <!-- Table header -->
             <thead class="">
                 <tr class="text-center">
-                    <th th:text="#{ui.url.slug}" class="text-uppercase d-md-table-cell" scope="col">SLUG</th>
-                    <th th:text="#{ui.url.owner}" class="text-uppercase d-md-table-cell" scope="col">OWNER</th>
-                    <th th:text="#{ui.url.url}" class="text-uppercase" scope="col">URL</th>
-                    <th th:text="#{ui.url.hits}" class="text-uppercase d-md-table-cell d-none" scope="col">HITS</th>
-                    <th th:text="#{ui.url.createdAt}" class="text-uppercase d-md-table-cell d-none text-nowrap"
-                        scope="col">CREATED AT</th>
-                    <th th:text="#{ui.url.remove}" class="text-uppercase" scope="col">Remove</th>
+                    <th th:text="#{ui.uri.slug}" class="text-uppercase d-md-table-cell" scope="col">SLUG</th>
+                    <th th:text="#{ui.uri.uri}" class="text-uppercase" scope="col">URL</th>
+                    <th th:text="#{ui.uri.hits}" class="text-uppercase d-md-table-cell d-none" scope="col">HITS</th>
+                    <th th:text="#{ui.uri.createdAt}" class="text-uppercase d-md-table-cell d-none text-nowrap"
+                        scope="col">CREATED
+                        AT</th>
+                    <th th:text="#{ui.uri.remove}" class="text-uppercase" scope="col">Remove</th>
                 </tr>
             </thead>
 
             <tbody class="table-group-divider">
 
                 <!-- Url tuple -->
-                <tr class="text-center" th:each="url : ${urlsPage}">
+                <tr class="text-center" th:each="uri : ${urisPage}">
 
                     <!-- Begin Url data -->
                     <td class="">
                         <a class="link-underline-light link-underline-opacity-100-hover link-underline-opacity-0 text-light"
-                            th:href="|/${url.slug}|" target="_blank">
-                            <p th:text="${url.slug}">slug</p>
+                            th:href="|/${uri.slug}|" target="_blank">
+                            <p th:text="${uri.slug}">slug</p>
                         </a>
-                    </td>
-                    <td>
-                        <p th:text="${url.owner}">owner</p>
                     </td>
                     <td class="text-wrap">
                         <a class="text-wrap text-break link-underline-light link-underline-opacity-100-hover link-underline-opacity-0 text-light"
-                            th:href="${url.url}" th:text="${url.url}" target="_blank">
+                            th:href="${uri.uri}" th:text="${uri.uri}" target="_blank">
                             url
                         </a>
                     </td>
                     <td class="d-md-table-cell d-none">
-                        <p th:text="${url.hit}">hits</p>
+                        <p th:text="${uri.hit}">hits</p>
                     </td>
-                    <td class="d-md-table-cell d-none" th:with="dateFormat=#{url.creationTimestamp.format}">
-                        <p th:text="${#temporals.format(url.creationTimestamp, dateFormat)}">
+                    <td class="d-md-table-cell d-none" th:with="dateFormat=#{uri.creationTimestamp.format}">
+                        <p th:text="${#temporals.format(uri.creationTimestamp, dateFormat)}">
                             created at...</p>
                     </td>
                     <!-- End Url data -->
@@ -79,12 +82,12 @@
                     <!-- Delete button -->
                     <td class="text-center">
                         <button class="btn btn-danger" type="button" data-bs-toggle="modal"
-                            th:attr="data-bs-target=|#${url.id}|">
+                            th:attr="data-bs-target=|#${uri.id}|">
                             <i class="fa-solid fa-trash"></i>
                         </button>
 
                         <!-- Url deletion modal -->
-                        <div class="modal fade" th:attr="id=${url.id}" tabIndex="-1">
+                        <div class="modal fade" th:attr="id=${uri.id}" tabIndex="-1">
                             <div class="modal-dialog">
                                 <div class="modal-content bg-dark text-white">
                                     <div class="modal-header bg-danger">
@@ -94,8 +97,8 @@
                                     <div class="modal-body">
                                         Tem certeza que deseja remover
                                         <br>
-                                        <a th:href="${url.url}" target="_blank">
-                                            <span class="fw-bold" th:text="${url.url}">
+                                        <a th:href="${uri.uri}" target="_blank">
+                                            <span class="fw-bold" th:text="${uri.uri}">
                                             </span>
                                         </a>
                                         ?
@@ -104,9 +107,8 @@
                                         <button type="button" data-bs-dismiss="modal"
                                             class="btn btn-secondary">Close</button>
 
-                                        <form method="post" action="/user/adm/urls/delete"
-                                            th:action="@{/user/adm/urls/delete}">
-                                            <input type="hidden" name="id" autocomplete="off" th:value="${url.id}">
+                                        <form method="post" action="/user/uris/delete" th:action="@{/user/uris/delete}">
+                                            <input type="hidden" name="id" autocomplete="off" th:value="${uri.id}">
                                             <button type="submit" class="btn btn-danger">Delete</button>
                                         </form>
                                     </div>
@@ -120,12 +122,12 @@
         </table>
 
         <!-- Pagination -->
-        <nav class="mt-3" th:if="${urlsPage.totalPages > 1}">
+        <nav class="mt-3" th:if="${urisPage.totalPages > 1}">
             <ol class="pagination justify-content-center">
 
                 <!-- Previous button -->
-                <li th:if="${!urlsPage.isFirst}" class="page-item">
-                    <a href="#" th:href="@{${url}(p=${urlsPage.number - 1})}"
+                <li th:if="${!urisPage.isFirst}" class="page-item">
+                    <a href="#" th:href="@{${url}(p=${urisPage.number - 1})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-left"></i>
@@ -136,12 +138,12 @@
                 <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
                     <a th:href="@{${url}(p=${page})}" th:text="${page + 1}" class="page-link border-0"
-                        th:classappend="${page == urlsPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
+                        th:classappend="${page == urisPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
                 <!-- Next button -->
-                <li th:if="${!urlsPage.isLast}" class="page-item">
-                    <a href="#" th:href="@{${url}(p=${urlsPage.number + 1})}"
+                <li th:if="${!urisPage.isLast}" class="page-item">
+                    <a href="#" th:href="@{${url}(p=${urisPage.number + 1})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-right"></i>

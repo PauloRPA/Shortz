@@ -34,8 +34,8 @@ public class EncodeRandomUrlShortenerTest {
     @DisplayName("Quando encurtar uma url deve retornar um hash no tamanho adequado.")
     public void whenShortUrl_shouldEncodeAndReturnHashRequiredWindowSize() {
         final int initialWindow = encodeUrlShortener.getWindowSize();
-        Optional<String> encodedUrlInitialWindow = encodeUrlShortener.encodeUrl(VALID_URL);
-        Optional<String> encodedUrlIncreaseWindow = encodeUrlShortener.encodeUrl(VALID_URL, 1);
+        Optional<String> encodedUrlInitialWindow = encodeUrlShortener.encodeUri(VALID_URL);
+        Optional<String> encodedUrlIncreaseWindow = encodeUrlShortener.encodeUri(VALID_URL, 1);
 
         assertThat(encodedUrlInitialWindow.isPresent()).isTrue();
         assertThat(encodedUrlInitialWindow.get().length()).isEqualTo(initialWindow);
@@ -50,7 +50,7 @@ public class EncodeRandomUrlShortenerTest {
     @DisplayName("Retorna um hash valido quando qualquer protocolo é permitido.")
     public void whenShortUrlValidProtocol_shouldReturnHash() {
         var urlShortener = new EncodeRandomUrlShortener(new DigestToBase64StringEncoder(), INITIAL_WINDOW_SIZE);
-        Optional<String> encodedUrl = urlShortener.encodeUrl(FTP_PROTOCOL_URL);
+        Optional<String> encodedUrl = urlShortener.encodeUri(FTP_PROTOCOL_URL);
 
         assertThat(encodedUrl.isPresent()).isTrue();
     }
@@ -59,7 +59,7 @@ public class EncodeRandomUrlShortenerTest {
     @DisplayName("Retorna vazio quando um protocolo invalido é informado.")
     public void whenShortUrlInvalidProtocol_shouldReturnEmpty() {
         var urlShortener = new EncodeRandomUrlShortener(new DigestToBase64StringEncoder(), INITIAL_WINDOW_SIZE, WEB_PROTOCOLS);
-        Optional<String> encodedUrl = urlShortener.encodeUrl(FTP_PROTOCOL_URL);
+        Optional<String> encodedUrl = urlShortener.encodeUri(FTP_PROTOCOL_URL);
 
         assertThat(encodedUrl.isEmpty()).isTrue();
     }
@@ -75,7 +75,7 @@ public class EncodeRandomUrlShortenerTest {
         UrlShortener urlShortener = new EncodeRandomUrlShortener(s -> s, OUT_OF_BOUNDS_WINDOW_SIZE);
 
         for (int i = 0; i < NUMBER_OF_SAMPLES; i++) {
-            Optional<String> encodedUrl = urlShortener.encodeUrl(VALID_URL);
+            Optional<String> encodedUrl = urlShortener.encodeUri(VALID_URL);
             assertThat(encodedUrl.isPresent()).isTrue();
             assertThat(encodedUrl.get().length()).isEqualTo(urlShortener.getWindowSize());
             samples[i] = encodedUrl.get();
@@ -92,7 +92,7 @@ public class EncodeRandomUrlShortenerTest {
         final int initialWindow = urlUnsafeChars.length();
         UrlShortener urlShortener = new EncodeRandomUrlShortener(s -> urlUnsafeChars, initialWindow);
 
-        assertThat(urlShortener.encodeUrl(VALID_URL)).isPresent();
-        assertThat(urlShortener.encodeUrl(VALID_URL).get()).isEqualTo("_".repeat(urlUnsafeChars.length()));
+        assertThat(urlShortener.encodeUri(VALID_URL)).isPresent();
+        assertThat(urlShortener.encodeUri(VALID_URL).get()).isEqualTo("_".repeat(urlUnsafeChars.length()));
     }
 }

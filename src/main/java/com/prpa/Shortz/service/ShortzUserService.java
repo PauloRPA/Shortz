@@ -43,7 +43,7 @@ public class ShortzUserService implements UserDetailsService {
         newUser.setUsername(newUser.getUsername().toLowerCase());
         newUser.setEmail(newUser.getEmail().toLowerCase());
         newUser.setRole(Role.USER);
-        newUser.setUrlCount(ShortzUser.UNLIMITED_URL_COUNT);
+        newUser.setUrlCreationLimit(ShortzUser.UNLIMITED_URL_COUNT);
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setEnabled(true);
 
@@ -53,7 +53,7 @@ public class ShortzUserService implements UserDetailsService {
         savedDTO.setUsername(userSaved.getUsername());
         savedDTO.setEmail(userSaved.getEmail());
         savedDTO.setRole(userSaved.getRole());
-        savedDTO.setUrlCount(userSaved.getUrlCount());
+        savedDTO.setUrlCreationLimit(userSaved.getUrlCreationLimit());
         savedDTO.setEnabled(userSaved.getEnabled());
 
         return savedDTO;
@@ -68,7 +68,7 @@ public class ShortzUserService implements UserDetailsService {
             shortzUserDTO.setEmail(user.getEmail());
             shortzUserDTO.setRole(user.getRole());
             shortzUserDTO.setEnabled(user.getEnabled());
-            shortzUserDTO.setUrlCount(user.getUrlCount());
+            shortzUserDTO.setUrlCreationLimit(user.getUrlCreationLimit());
             return shortzUserDTO;
         });
     }
@@ -92,7 +92,7 @@ public class ShortzUserService implements UserDetailsService {
         ShortzUser user = userById.get();
         user.setUsername(newInfo.getUsername());
         user.setEmail(newInfo.getEmail());
-        user.setUrlCount(newInfo.getUrlCount());
+        user.setUrlCreationLimit(newInfo.getUrlCreationLimit());
         user.setRole(newInfo.getRole());
         user.setEnabled(newInfo.isEnabled());
 

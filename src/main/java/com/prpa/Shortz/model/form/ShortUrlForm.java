@@ -10,8 +10,8 @@ import lombok.Setter;
 @AllArgsConstructor @NoArgsConstructor
 public class ShortUrlForm {
 
-    @NotBlank(message = "The url must not be blank.")
-    private String url;
+    @NotBlank(message = "The uri must not be blank.")
+    private String uri;
 
     private String slug;
 }

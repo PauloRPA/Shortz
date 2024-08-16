@@ -32,7 +32,7 @@ public class ShortUrlService {
                 .owner(shortUrl.getOwner().getUsername())
                 .hit(shortUrl.getHit())
                 .slug(shortUrl.getSlug())
-                .url(URI.create(shortUrl.getUrl()))
+                .uri(URI.create(shortUrl.getUri()))
                 .build());
     }
 
@@ -44,7 +44,7 @@ public class ShortUrlService {
                 .owner(shortUrl.getOwner().getUsername())
                 .hit(shortUrl.getHit())
                 .slug(shortUrl.getSlug())
-                .url(URI.create(shortUrl.getUrl()))
+                .uri(URI.create(shortUrl.getUri()))
                 .build());
     }
 
@@ -58,7 +58,7 @@ public class ShortUrlService {
 
     public void save(URI uri, ShortUrlForm form, ShortzUser owner) {
         final ShortUrl newShortUrl = ShortUrl.builder()
-                .url(uri.toString())
+                .uri(uri.toString())
                 .owner(owner)
                 .slug(form.getSlug())
                 .creationTimestamp(Instant.now())
@@ -72,7 +72,7 @@ public class ShortUrlService {
         return shortUrlRepository.existsBySlug(slug);
     }
 
-    public boolean isUrlCountOverLimit(ShortzUser owner, Integer limit) {
+    public boolean isUrlCreationOverLimit(ShortzUser owner, Integer limit) {
         if (limit.equals(ShortzUser.UNLIMITED_URL_COUNT)) return false;
         return shortUrlRepository.countByOwner(owner) >= limit;
     }

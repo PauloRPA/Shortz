@@ -26,7 +26,7 @@ public class ShortzUserDTO {
     @Min(value = -1)
     @Max(value = 1_000_000)
     @NotNull(message = "{0} must not be null")
-    private int urlCount;
+    private int urlCreationLimit;
 
     @NotNull(message = "{0} must not be null")
     private Role role;
