@@ -606,11 +606,22 @@ public class ShortUrlControllerTest {
     @DisplayName("Se o o usuário post inserir uma uri vazia deve retornar 400 BAD_REQUEST com mensagem de erro.")
     public void whenUserPostEmptyURI_shouldReturnErrorMessage400BadRequest() {
         final URI EMPTY_URI = URI.create("");
+        mockMvc.perform(post("/user/uris/new")
+                        .accept(MediaType.TEXT_HTML)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("slug", "testslug")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(view().name("/user/uris/newUri"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().errorCount(1))
+                .andExpect(model().attributeHasFieldErrors("newUriForm", "uri"))
+                .andExpect(model().attributeHasFieldErrorCode("newUriForm", "uri", "NotBlank"));
 
         mockMvc.perform(post("/user/urls/new")
                         .accept(MediaType.TEXT_HTML)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("url", EMPTY_URI.toString())
+                        .param("uri", "")
                         .param("slug", "testslug")
                         .with(csrf()))
                 .andExpect(status().isBadRequest())
