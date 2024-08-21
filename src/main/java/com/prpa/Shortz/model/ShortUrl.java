@@ -40,7 +40,7 @@ public class ShortUrl {
     private String slug;
 
     @NotNull
-    @Column(name = "url", updatable = false)
+    @Column(name = "url", updatable = false, columnDefinition = "TEXT")
     private String uri;
 
 }

@@ -6,6 +6,7 @@ import com.prpa.Shortz.model.dto.ShortUrlDTO;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -84,7 +85,19 @@ public class ShortUrlService {
         if (limit.equals(ShortzUser.UNLIMITED_URL_COUNT)) return false;
         return shortUrlRepository.countByOwner(owner) >= limit;
     }
-}
+
+    public Optional<ShortUrl> findUrlBySlug(String slug) {
+        return shortUrlRepository.findBySlug(slug);
+    }
+
+    public void onRedirect(ShortUrl redirectShortUrl) {
+        Optional<ShortUrl> uriToUpdate = shortUrlRepository.findById(redirectShortUrl.getId());
+        if (uriToUpdate.isEmpty()) return;
+
+        ShortUrl shortUrl = uriToUpdate.get();
+        shortUrl.setHit(shortUrl.getHit() + 1);
+        shortUrlRepository.save(shortUrl);
+    }
 
     public Set<String> filterInvalidCharsFromSlug(String slug) {
         final Set<String> validChars = DICTIONARY.chars()
