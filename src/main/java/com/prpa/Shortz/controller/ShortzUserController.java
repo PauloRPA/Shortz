@@ -19,9 +19,10 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static com.prpa.Shortz.model.enums.Role.ADMIN;
 import static java.util.Objects.requireNonNullElse;
@@ -113,15 +114,9 @@ public class ShortzUserController {
 
         if (users.getTotalPages() > 1) {
             int currentPage = users.getNumber();
+            int totalPages = users.getTotalPages();
 
-            List<Integer> pagination =
-                    IntStream.rangeClosed(
-                                    currentPage - NUMBER_PAGINATION_OPTIONS / 2,
-                                    currentPage + NUMBER_PAGINATION_OPTIONS / 2)
-                            .boxed()
-                            .filter(pag -> pag < users.getTotalPages())
-                            .filter(pag -> pag >= 0)
-                            .collect(Collectors.toList());
+            var pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
 
             model.addAttribute("pagination", pagination);
         }

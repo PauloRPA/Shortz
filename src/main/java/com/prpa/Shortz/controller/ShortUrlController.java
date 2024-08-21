@@ -7,6 +7,7 @@ import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.service.ShortUrlService;
+import com.prpa.Shortz.util.ControllerUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,8 +28,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Controller
 @RequestMapping("/user")
@@ -150,17 +149,10 @@ public class ShortUrlController {
         });
 
         if (uris.getTotalPages() > 1) {
-            int currentPage = uris.getNumber();
+            final int currentPage = uris.getNumber();
+            final int totalPages = uris.getTotalPages();
 
-            List<Integer> pagination =
-                    IntStream.rangeClosed(
-                                    currentPage - NUMBER_PAGINATION_OPTIONS / 2,
-                                    currentPage + NUMBER_PAGINATION_OPTIONS / 2)
-                            .boxed()
-                            .filter(pag -> pag < uris.getTotalPages())
-                            .filter(pag -> pag >= 0)
-                            .collect(Collectors.toList());
-
+            var pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
             model.addAttribute("pagination", pagination);
         }
 
@@ -215,16 +207,10 @@ public class ShortUrlController {
         });
 
         if (uris.getTotalPages() > 1) {
-            int currentPage = uris.getNumber();
+            final int currentPage = uris.getNumber();
+            final int totalPages = uris.getTotalPages();
 
-            List<Integer> pagination =
-                    IntStream.rangeClosed(
-                                    currentPage - NUMBER_PAGINATION_OPTIONS / 2,
-                                    currentPage + NUMBER_PAGINATION_OPTIONS / 2)
-                            .boxed()
-                            .filter(pag -> pag < uris.getTotalPages())
-                            .filter(pag -> pag >= 0)
-                            .collect(Collectors.toList());
+            var pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
 
             model.addAttribute("pagination", pagination);
         }
