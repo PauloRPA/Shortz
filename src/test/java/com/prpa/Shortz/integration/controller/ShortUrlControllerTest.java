@@ -24,10 +24,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static com.prpa.Shortz.model.ShortzUser.UNLIMITED_URL_COUNT;
 import static com.prpa.Shortz.model.enums.Role.ADMIN;
@@ -680,6 +677,7 @@ public class ShortUrlControllerTest {
     @DisplayName("Se o o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
     public void whenUserPostEmptySlugAndInvalidURI_shouldReturn400BadRequest() {
         for (String invalidUri : getInvalidUris()) {
+            System.out.println(invalidUri);
             mockMvc.perform(post("/user/uris/new")
                             .accept(MediaType.TEXT_HTML)
                             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -727,10 +725,18 @@ public class ShortUrlControllerTest {
     private static String[] getInvalidUris() {
         String invalidNoTLDNoScheme = "localhost/something";
         String invalidSchemeWithoutTLD = "gopher://localhost/something";
-        String invalidCharactersWithTLD = "http://localhos-=_+!@#$^&*()t.com/something";
+        String invalidCharactersWithTLD = "http://local!@#$host.com/something";
         String invalidSchemeWithTLD = "gopher://localhost.com/something";
+        String invalidURIChars = "!$%^&*()=+";
 
-        return new String[]{invalidNoTLDNoScheme, invalidSchemeWithoutTLD,
-                invalidCharactersWithTLD, invalidSchemeWithTLD};
+        List<String> invalidUris = new ArrayList<>(List.of(invalidNoTLDNoScheme, invalidSchemeWithoutTLD,
+                invalidCharactersWithTLD, invalidSchemeWithTLD));
+
+        invalidURIChars.chars()
+                .mapToObj(ch -> (char) ch)
+                .map(ch -> "https://invalid" + ch + "uri.com/path/")
+                .forEach(invalidUris::add);
+
+        return invalidUris.toArray(String[]::new);
     }
 }

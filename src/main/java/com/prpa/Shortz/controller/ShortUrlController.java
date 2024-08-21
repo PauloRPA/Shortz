@@ -6,6 +6,7 @@ import com.prpa.Shortz.model.exceptions.EmptyUriException;
 import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
+import com.prpa.Shortz.model.validation.ShortUrlFormValidator;
 import com.prpa.Shortz.service.ShortUrlService;
 import com.prpa.Shortz.util.ControllerUtils;
 import jakarta.validation.Valid;
@@ -16,18 +17,18 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.prpa.Shortz.model.validation.ShortUrlFormValidator.toValidUriFormat;
 
 @Controller
 @RequestMapping("/user")
@@ -39,11 +40,13 @@ public class ShortUrlController {
 
     private final ShortUrlService shortUrlService;
     private final UrlShortener urlShortener;
+    private final ShortUrlFormValidator shortUrlFormValidator;
 
     @Autowired
-    public ShortUrlController(ShortUrlService shortUrlService, UrlShortener urlShortener) {
+    public ShortUrlController(ShortUrlService shortUrlService, UrlShortener urlShortener, ShortUrlFormValidator shortUrlFormValidator) {
         this.shortUrlService = shortUrlService;
         this.urlShortener = urlShortener;
+        this.shortUrlFormValidator = shortUrlFormValidator;
     }
 
     @ModelAttribute("uuidShortUrlIdMap")
@@ -61,65 +64,19 @@ public class ShortUrlController {
 
     @PostMapping("/uris/new")
     public ModelAndView postNewUri(@Valid @ModelAttribute("newUriForm") ShortUrlForm form,
-                                   BindingResult result,
+                                   Errors errors,
                                    @AuthenticationPrincipal ShortzUser owner) {
         ModelAndView mav = new ModelAndView();
+        shortUrlFormValidator.validate(form, errors);
 
-        Optional<URI> uri = Optional.empty();
-        if (form.getUri() != null) {
-            uri = validateUri(form.getUri().trim());
-        }
-
-        if (uri.isEmpty() && result.getFieldErrors("uri").isEmpty()) {
-            result.rejectValue("uri", "error.newUriForm.uri.invalid");
-        }
-
-        if (uri.isPresent() && !urlShortener.getSupportedProtocols().contains(uri.get().getScheme())) {
-            result.rejectValue("uri", "error.newUriForm.uri.unsupported.protocol");
-        }
-
-        if (!result.getFieldErrors("uri").isEmpty()) {
-            result.getModel().forEach(mav.getModelMap()::addAttribute);
+        if (errors.hasErrors()) {
+            errors.getAllErrors().forEach(mav.getModelMap()::addAttribute);
             mav.setViewName("/user/uris/newUri");
             mav.setStatus(HttpStatus.BAD_REQUEST);
             return mav;
         }
 
-        String slug = form.getSlug();
-        if ((slug == null || slug.isBlank()) && uri.isPresent()) {
-            slug = urlShortener.encodeUri(uri.get()).orElse("");
-        }
-
-        if (slug == null || slug.isBlank()) {
-            result.rejectValue("slug", "error.newUriForm.slug.encoding");
-            mav.setViewName("/user/uris/newUri");
-            mav.setStatus(HttpStatus.BAD_REQUEST);
-            return mav;
-        }
-
-        if (result.getFieldErrors("slug").isEmpty() && shortUrlService.existsBySlug(slug)) {
-            result.rejectValue("slug", "slug.exists");
-        }
-
-        Set<String> invalidChars = shortUrlService.filterInvalidCharsFromSlug(slug);
-        if (!invalidChars.isEmpty()) {
-            String invalidCharsStr = String.join("", invalidChars);
-            result.rejectValue("slug", "error.slug.character", new String[]{invalidCharsStr}, "The slug contains invalid characters");
-        }
-
-        if (shortUrlService.isUrlCreationOverLimit(owner, owner.getUrlCreationLimit())) {
-            result.rejectValue("slug", "error.newUriForm.user.limit");
-        }
-
-        if (result.hasErrors()) {
-            result.getModel().forEach(mav.getModelMap()::addAttribute);
-            mav.setViewName("/user/uris/newUri");
-            mav.setStatus(HttpStatus.BAD_REQUEST);
-            return mav;
-        }
-        form.setSlug(slug);
-
-        shortUrlService.save(uri.get(), form, owner);
+        shortUrlService.save(form, owner);
 
         mav.setViewName("redirect:/user/uris");
         return mav;
@@ -250,33 +207,12 @@ public class ShortUrlController {
         if (bodyParams == null) throw new EmptyUriException("");
         if (!bodyParams.containsKey("uri") || bodyParams.get("uri").isBlank()) throw new EmptyUriException("");
 
-        String encoded = validateUri(bodyParams.get("uri"))
+        String encoded = toValidUriFormat(bodyParams.get("uri"))
                 .map(validateUri -> urlShortener.encodeUri(validateUri).orElse(""))
                 .orElse("");
 
         if (encoded.isBlank()) throw new InvalidUriException("");
         return encoded;
-    }
-
-    private Optional<URI> validateUri(String uriToValidate) {
-        String DEFAULT_SCHEME = "https://";
-        final URI uri;
-
-        try {
-            final boolean hasScheme = uriToValidate.contains("://");
-            String schemePrefix = hasScheme ? "" : DEFAULT_SCHEME;
-            String fullUri = schemePrefix + uriToValidate;
-
-            if (!hasScheme) {
-                new URL(fullUri);
-            }
-
-            if (!fullUri.contains(".") && !hasScheme) return Optional.empty();
-
-            return Optional.of(new URI(fullUri));
-        } catch (URISyntaxException | MalformedURLException  e) {
-            return Optional.empty();
-        }
     }
 
 }

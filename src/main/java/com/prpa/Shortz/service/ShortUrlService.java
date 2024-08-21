@@ -6,7 +6,6 @@ import com.prpa.Shortz.model.dto.ShortUrlDTO;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,16 +14,9 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.function.Predicate.not;
 
 @Service
 public class ShortUrlService {
-
-    @Value("${default.urlshortener.dictionary}")
-    private String DICTIONARY;
 
     private final ShortUrlRepository shortUrlRepository;
 
@@ -65,9 +57,9 @@ public class ShortUrlService {
         return exists;
     }
 
-    public void save(URI uri, ShortUrlForm form, ShortzUser owner) {
+    public void save(ShortUrlForm form, ShortzUser owner) {
         final ShortUrl newShortUrl = ShortUrl.builder()
-                .uri(uri.toString())
+                .uri(form.getUri())
                 .owner(owner)
                 .slug(form.getSlug())
                 .creationTimestamp(Instant.now())
@@ -97,19 +89,6 @@ public class ShortUrlService {
         ShortUrl shortUrl = uriToUpdate.get();
         shortUrl.setHit(shortUrl.getHit() + 1);
         shortUrlRepository.save(shortUrl);
-    }
-
-    public Set<String> filterInvalidCharsFromSlug(String slug) {
-        final Set<String> validChars = DICTIONARY.chars()
-                .mapToObj(c -> (char) c)
-                .map(Object::toString)
-                .collect(Collectors.toSet());
-
-        return slug.chars()
-                .mapToObj(c -> (char) c)
-                .map(Object::toString)
-                .filter(not(validChars::contains))
-                .collect(Collectors.toSet());
     }
 
 }
