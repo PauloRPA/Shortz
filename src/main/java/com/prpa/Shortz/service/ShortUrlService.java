@@ -13,9 +13,17 @@ import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 @Service
 public class ShortUrlService {
+
+    @Value("${default.urlshortener.dictionary}")
+    private String DICTIONARY;
 
     private final ShortUrlRepository shortUrlRepository;
 
@@ -77,3 +85,21 @@ public class ShortUrlService {
         return shortUrlRepository.countByOwner(owner) >= limit;
     }
 }
+
+    public Set<String> filterInvalidCharsFromSlug(String slug) {
+        final Set<String> validChars = DICTIONARY.chars()
+                .mapToObj(c -> (char) c)
+                .map(Object::toString)
+                .collect(Collectors.toSet());
+
+        return slug.chars()
+                .mapToObj(c -> (char) c)
+                .map(Object::toString)
+                .filter(not(validChars::contains))
+                .collect(Collectors.toSet());
+    }
+
+}
+
+
+

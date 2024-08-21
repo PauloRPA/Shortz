@@ -652,6 +652,31 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário post inserir uma URI valida com slug com caracteres inválidos deve retornar 302 FOUND.")
+    public void whenUserPostInvalidSlugAndValidURI_shouldEncodeURIReturn400BadRequest() {
+        final URI VALID_URI = URI.create("https://localhost/something2");
+        final String NON_DICTIONARY_CHARACTERS = "!@#$%^&*(/";
+
+        for (char ch : NON_DICTIONARY_CHARACTERS .toCharArray()) {
+            mockMvc.perform(post("/user/uris/new")
+                            .accept(MediaType.TEXT_HTML)
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                            .param("uri", VALID_URI.toString())
+                            .param("slug", "bad" + ch + "slug")
+                            .with(csrf()))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(model().hasErrors())
+                    .andExpect(model().attributeErrorCount("newUriForm", 1))
+                    .andExpect(model().attributeHasFieldErrors("newUriForm", "slug"))
+                    .andExpect(model().attributeHasFieldErrorCode("newUriForm", "slug", "error.slug.character"))
+                    .andDo(print());
+        }
+    }
+
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário post inserir uma URI invalida sem slug deve retornar 400 BAD_REQUEST com error msg.")
     public void whenUserPostEmptySlugAndInvalidURI_shouldReturn400BadRequest() {
         for (String invalidUri : getInvalidUris()) {

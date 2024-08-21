@@ -93,10 +93,19 @@ public class ShortUrlController {
 
         if (slug == null || slug.isBlank()) {
             result.rejectValue("slug", "error.newUriForm.slug.encoding");
+            mav.setViewName("/user/uris/newUri");
+            mav.setStatus(HttpStatus.BAD_REQUEST);
+            return mav;
         }
 
         if (result.getFieldErrors("slug").isEmpty() && shortUrlService.existsBySlug(slug)) {
             result.rejectValue("slug", "slug.exists");
+        }
+
+        Set<String> invalidChars = shortUrlService.filterInvalidCharsFromSlug(slug);
+        if (!invalidChars.isEmpty()) {
+            String invalidCharsStr = String.join("", invalidChars);
+            result.rejectValue("slug", "error.slug.character", new String[]{invalidCharsStr}, "The slug contains invalid characters");
         }
 
         if (shortUrlService.isUrlCreationOverLimit(owner, owner.getUrlCreationLimit())) {
