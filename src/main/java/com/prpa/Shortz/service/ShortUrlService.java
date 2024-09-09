@@ -75,20 +75,15 @@ public class ShortUrlService {
         shortUrlRepository.save(shortUrl);
     }
 
-    public List<ShortUrlDTO> urlToDTO(Iterable<ShortUrl> uris) {
-        List<ShortUrl> shortUrls = new ArrayList<>();
-        uris.forEach(shortUrls::add);
-
-        return shortUrls.stream()
-                .map(shortUrl -> ShortUrlDTO.builder()
+    public Page<ShortUrlDTO> urlToDTOPage(Page<ShortUrl> uris) {
+        return uris.map(shortUrl -> ShortUrlDTO.builder()
                         .id(UUID.randomUUID().toString())
                         .creationTimestamp(shortUrl.getCreationTimestamp())
                         .owner(shortUrl.getOwner().getUsername())
                         .hit(shortUrl.getHit())
                         .slug(shortUrl.getSlug())
                         .uri(URI.create(shortUrl.getUri()))
-                        .build())
-                .collect(Collectors.toList());
+                .build());
     }
 
 }

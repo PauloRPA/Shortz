@@ -34,7 +34,7 @@ import static com.prpa.Shortz.model.validation.ShortUrlFormValidator.toValidUriF
 @SessionAttributes("urlDTOIdMap")
 public class ShortUrlController {
 
-    private static final Integer DEFAULT_PAGE_SIZE = 15;
+    private static final Integer DEFAULT_PAGE_SIZE = 12;
     private static final Integer NUMBER_PAGINATION_OPTIONS = 5;
 
     private final ShortUrlService shortUrlService;
@@ -89,18 +89,19 @@ public class ShortUrlController {
         ShortzUser currentUser = (ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Page<ShortUrl> uriPage = shortUrlService.findAllUrlsByUser(pageParam, DEFAULT_PAGE_SIZE, currentUser);
-        List<ShortUrlDTO> uriPageDTOs = shortUrlService.urlToDTO(uriPage);
+        Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
 
         model.addAttribute("urisPage", uriPage);
         if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
             return "redirect:/user/uris";
         }
 
-        int count = 0;
         urlDTOIdMap.clear();
-        for (ShortUrl currentPageItem : uriPage) {
-            String id = uriPageDTOs.get(count++).getId();
-            urlDTOIdMap.put(UUID.fromString(id), currentPageItem.getId());
+        Iterator<ShortUrl> uriIterator = uriPage.iterator();
+        Iterator<ShortUrlDTO> dtoIterator = uriDTOPage.iterator();
+        while (uriIterator.hasNext()) {
+            UUID dtoId = UUID.fromString(dtoIterator.next().getId());
+            urlDTOIdMap.put(dtoId, uriIterator.next().getId());
         }
 
         if (uriPage.getTotalPages() > 1) {
@@ -146,18 +147,19 @@ public class ShortUrlController {
                                 Model model) {
 
         Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
-        List<ShortUrlDTO> shortUrlDTOS = shortUrlService.urlToDTO(uriPage);
+        Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
 
-        model.addAttribute("urisPage", uriPage);
+        model.addAttribute("urisPage", uriDTOPage);
         if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
             return "redirect:/user/adm/uris";
         }
 
-        int count = 0;
         urlDTOIdMap.clear();
-        for (ShortUrl currentPageItem : uriPage) {
-            String id = shortUrlDTOS.get(count++).getId();
-            urlDTOIdMap.put(UUID.fromString(id), currentPageItem.getId());
+        Iterator<ShortUrl> uriIterator = uriPage.iterator();
+        Iterator<ShortUrlDTO> dtoIterator = uriDTOPage.iterator();
+        while (uriIterator.hasNext()) {
+            UUID dtoId = UUID.fromString(dtoIterator.next().getId());
+            urlDTOIdMap.put(dtoId, uriIterator.next().getId());
         }
 
         if (uriPage.getTotalPages() > 1) {
