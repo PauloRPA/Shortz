@@ -1,6 +1,6 @@
 package com.prpa.Shortz.model.form;
 
-import com.prpa.Shortz.model.annotations.FieldMatch;
+import com.prpa.Shortz.model.validation.annotations.FieldMatch;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

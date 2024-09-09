@@ -3,6 +3,7 @@ package com.prpa.Shortz.integration.controller;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortzUserDTO;
 import com.prpa.Shortz.model.enums.Role;
+import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,7 @@ public class ShortzUserControllerTest {
 
     private ShortzUser testUser;
     private ShortzUserDTO testUserDTO;
+    private ShortzUserEditForm testUserEditForm;
 
     @BeforeEach
     public void setup() {
@@ -65,6 +67,14 @@ public class ShortzUserControllerTest {
                 .role(USER).enabled(true).build();
 
         testUserDTO = ShortzUserDTO.builder()
+                .username(testUser.getUsername())
+                .email(testUser.getEmail())
+                .urlCreationLimit(testUser.getUrlCreationLimit())
+                .role(testUser.getRole())
+                .enabled(testUser.getEnabled())
+                .build();
+
+        testUserEditForm = ShortzUserEditForm.builder()
                 .username(testUser.getUsername())
                 .email(testUser.getEmail())
                 .urlCreationLimit(testUser.getUrlCreationLimit())
@@ -235,7 +245,7 @@ public class ShortzUserControllerTest {
                 .andReturn().getModelAndView();
 
         assertThat(mav).isNotNull();
-        assertThat(mav.getModel().get("editForm")).isEqualTo(testUserDTO);
+        assertThat(mav.getModel().get("editForm")).isEqualTo(testUserEditForm);
     }
 
     @SneakyThrows @Test @WithMockUser(roles = "ADMIN")

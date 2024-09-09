@@ -1,4 +1,4 @@
-package com.prpa.Shortz.model.annotations;
+package com.prpa.Shortz.model.validation.annotations;
 
 
 import com.prpa.Shortz.model.validation.FieldMatchConstraintValidation;

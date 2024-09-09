@@ -3,6 +3,7 @@ package com.prpa.Shortz.service;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortzUserDTO;
 import com.prpa.Shortz.model.enums.Role;
+import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -85,11 +86,11 @@ public class ShortzUserService implements UserDetailsService {
         return shortzUserRepository.findByUsernameIgnoreCase(username);
     }
 
-    public void update(String id, ShortzUserDTO newInfo) {
-        Optional<ShortzUser> userById = shortzUserRepository.findByUsernameIgnoreCase(id);
-        if (userById.isEmpty()) return;
+    public void update(String username, ShortzUserEditForm newInfo) {
+        Optional<ShortzUser> userByUsername = shortzUserRepository.findByUsernameIgnoreCase(username);
+        if (userByUsername.isEmpty()) return;
 
-        ShortzUser user = userById.get();
+        ShortzUser user = userByUsername.get();
         user.setUsername(newInfo.getUsername());
         user.setEmail(newInfo.getEmail());
         user.setUrlCreationLimit(newInfo.getUrlCreationLimit());
@@ -113,5 +114,4 @@ public class ShortzUserService implements UserDetailsService {
     public Integer countUsersByRole(Role role) {
         return shortzUserRepository.countByRole(role);
     }
-
 }

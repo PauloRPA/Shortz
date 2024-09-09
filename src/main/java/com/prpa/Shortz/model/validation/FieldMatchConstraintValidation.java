@@ -1,6 +1,6 @@
 package com.prpa.Shortz.model.validation;
 
-import com.prpa.Shortz.model.annotations.FieldMatch;
+import com.prpa.Shortz.model.validation.annotations.FieldMatch;
 import com.prpa.Shortz.model.exceptions.NoGettersFoundForMatchingFields;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
