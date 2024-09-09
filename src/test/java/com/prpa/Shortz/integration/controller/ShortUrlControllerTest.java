@@ -167,7 +167,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -193,7 +193,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -221,7 +221,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -320,7 +320,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -346,7 +346,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -374,7 +374,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", String.valueOf(TEST_UUID)))
                 .andExpect(status().isFound());
 
@@ -400,7 +400,7 @@ public class ShortUrlControllerTest {
 
         // Then
         mockMvc.perform(post("/user/adm/uris/delete").with(csrf())
-                        .sessionAttr("uuidShortUrlIdMap", uuidToShortUrlIdMapMock)
+                        .sessionAttr("urlDTOIdMap", uuidToShortUrlIdMapMock)
                         .param("id", MALFORMED_UUID))
                 .andExpect(status().isFound());
 

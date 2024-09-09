@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ShortUrlService {
@@ -25,28 +25,12 @@ public class ShortUrlService {
         this.shortUrlRepository = shortUrlRepository;
     }
 
-    public Page<ShortUrlDTO> findAllUrlsByUserToDTO(Integer pageNumber, Integer pageSize, ShortzUser user) {
-        Page<ShortUrl> all = shortUrlRepository.findAllByOwner(Pageable.ofSize(pageSize).withPage(pageNumber), user);
-        return all.map(shortUrl -> ShortUrlDTO.builder()
-                .id(String.valueOf(shortUrl.getId()))
-                .creationTimestamp(shortUrl.getCreationTimestamp())
-                .owner(shortUrl.getOwner().getUsername())
-                .hit(shortUrl.getHit())
-                .slug(shortUrl.getSlug())
-                .uri(URI.create(shortUrl.getUri()))
-                .build());
+    public Page<ShortUrl> findAllUrlsByUser(Integer pageNumber, Integer pageSize, ShortzUser user) {
+        return shortUrlRepository.findAllByOwner(Pageable.ofSize(pageSize).withPage(pageNumber), user);
     }
 
-    public Page<ShortUrlDTO> findAllToDTO(Integer pageNumber, Integer pageSize) {
-        Page<ShortUrl> all = shortUrlRepository.findAll(Pageable.ofSize(pageSize).withPage(pageNumber));
-        return all.map(shortUrl -> ShortUrlDTO.builder()
-                .id(String.valueOf(shortUrl.getId()))
-                .creationTimestamp(shortUrl.getCreationTimestamp())
-                .owner(shortUrl.getOwner().getUsername())
-                .hit(shortUrl.getHit())
-                .slug(shortUrl.getSlug())
-                .uri(URI.create(shortUrl.getUri()))
-                .build());
+    public Page<ShortUrl> findAll(Integer pageNumber, Integer pageSize) {
+        return shortUrlRepository.findAll(Pageable.ofSize(pageSize).withPage(pageNumber));
     }
 
     public boolean deleteById(Long shortUrlId) {
@@ -91,7 +75,20 @@ public class ShortUrlService {
         shortUrlRepository.save(shortUrl);
     }
 
+    public List<ShortUrlDTO> urlToDTO(Iterable<ShortUrl> uris) {
+        List<ShortUrl> shortUrls = new ArrayList<>();
+        uris.forEach(shortUrls::add);
+
+        return shortUrls.stream()
+                .map(shortUrl -> ShortUrlDTO.builder()
+                        .id(UUID.randomUUID().toString())
+                        .creationTimestamp(shortUrl.getCreationTimestamp())
+                        .owner(shortUrl.getOwner().getUsername())
+                        .hit(shortUrl.getHit())
+                        .slug(shortUrl.getSlug())
+                        .uri(URI.create(shortUrl.getUri()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 }
-
-
-

@@ -1,5 +1,6 @@
 package com.prpa.Shortz.controller;
 
+import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortUrlDTO;
 import com.prpa.Shortz.model.exceptions.EmptyUriException;
@@ -24,15 +25,13 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.prpa.Shortz.model.validation.ShortUrlFormValidator.toValidUriFormat;
 
 @Controller
 @RequestMapping("/user")
-@SessionAttributes("uuidShortUrlIdMap")
+@SessionAttributes("urlDTOIdMap")
 public class ShortUrlController {
 
     private static final Integer DEFAULT_PAGE_SIZE = 15;
@@ -49,7 +48,7 @@ public class ShortUrlController {
         this.shortUrlFormValidator = shortUrlFormValidator;
     }
 
-    @ModelAttribute("uuidShortUrlIdMap")
+    @ModelAttribute("urlDTOIdMap")
     public Map<UUID, Long> getUUIDShortUrlMap() {
         return new HashMap<>();
     }
@@ -84,30 +83,29 @@ public class ShortUrlController {
 
     @GetMapping("/uris")
     public String getUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
-                          @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                          @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
                           Model model) {
 
         ShortzUser currentUser = (ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<ShortUrlDTO> uris = shortUrlService.findAllUrlsByUserToDTO(pageParam, DEFAULT_PAGE_SIZE, currentUser);
-        model.addAttribute("urisPage", uris);
+        Page<ShortUrl> uriPage = shortUrlService.findAllUrlsByUser(pageParam, DEFAULT_PAGE_SIZE, currentUser);
+        List<ShortUrlDTO> uriPageDTOs = shortUrlService.urlToDTO(uriPage);
 
-        if (uris.getTotalPages() > 0 && pageParam > uris.getTotalPages()) {
+        model.addAttribute("urisPage", uriPage);
+        if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
             return "redirect:/user/uris";
         }
 
-        uuidShortUrlIdMap.clear();
-        uris.forEach(url -> {
-            UUID randomUUID = UUID.randomUUID();
-            String urlId = url.getId();
-            url.setId(randomUUID.toString());
+        int count = 0;
+        urlDTOIdMap.clear();
+        for (ShortUrl currentPageItem : uriPage) {
+            String id = uriPageDTOs.get(count++).getId();
+            urlDTOIdMap.put(UUID.fromString(id), currentPageItem.getId());
+        }
 
-            uuidShortUrlIdMap.put(randomUUID, Long.parseLong(urlId));
-        });
-
-        if (uris.getTotalPages() > 1) {
-            final int currentPage = uris.getNumber();
-            final int totalPages = uris.getTotalPages();
+        if (uriPage.getTotalPages() > 1) {
+            final int currentPage = uriPage.getNumber();
+            final int totalPages = uriPage.getTotalPages();
 
             var pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
             model.addAttribute("pagination", pagination);
@@ -118,7 +116,7 @@ public class ShortUrlController {
 
     @PostMapping("/uris/delete")
     public ModelAndView postDeleteUser(@RequestParam("id") UUID shortUrlUUID,
-                                       @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                                       @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
                                        RedirectAttributes redirectAttributes) {
 
         ModelAndView mav = new ModelAndView();
@@ -127,13 +125,13 @@ public class ShortUrlController {
                 .fromMethodName(ShortUrlController.class, "getUris", null, null, null)
                 .buildAndExpand();
 
-        if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
-            uuidShortUrlIdMap.clear();
+        if (!urlDTOIdMap.containsKey(shortUrlUUID)) {
+            urlDTOIdMap.clear();
             mav.setViewName("redirect:" + urlManagementUri);
             return mav;
         }
 
-        Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
+        Long shortUrlId = urlDTOIdMap.get(shortUrlUUID);
 
         shortUrlService.deleteById(shortUrlId);
         redirectAttributes.addFlashAttribute("message", "uri.deleted");
@@ -144,28 +142,27 @@ public class ShortUrlController {
 
     @GetMapping("/adm/uris")
     public String getSystemUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
-                                @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                                @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
                                 Model model) {
 
-        Page<ShortUrlDTO> uris = shortUrlService.findAllToDTO(pageParam, DEFAULT_PAGE_SIZE);
-        model.addAttribute("urisPage", uris);
+        Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
+        List<ShortUrlDTO> shortUrlDTOS = shortUrlService.urlToDTO(uriPage);
 
-        if (uris.getTotalPages() > 0 && pageParam > uris.getTotalPages()) {
+        model.addAttribute("urisPage", uriPage);
+        if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
             return "redirect:/user/adm/uris";
         }
 
-        uuidShortUrlIdMap.clear();
-        uris.forEach(uri -> {
-            UUID randomUUID = UUID.randomUUID();
-            String uriId = uri.getId();
-            uri.setId(randomUUID.toString());
+        int count = 0;
+        urlDTOIdMap.clear();
+        for (ShortUrl currentPageItem : uriPage) {
+            String id = shortUrlDTOS.get(count++).getId();
+            urlDTOIdMap.put(UUID.fromString(id), currentPageItem.getId());
+        }
 
-            uuidShortUrlIdMap.put(randomUUID, Long.parseLong(uriId));
-        });
-
-        if (uris.getTotalPages() > 1) {
-            final int currentPage = uris.getNumber();
-            final int totalPages = uris.getTotalPages();
+        if (uriPage.getTotalPages() > 1) {
+            final int currentPage = uriPage.getNumber();
+            final int totalPages = uriPage.getTotalPages();
 
             var pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
 
@@ -177,7 +174,7 @@ public class ShortUrlController {
 
     @PostMapping("adm/uris/delete")
     public ModelAndView postDeleteSystemUrl(@RequestParam("id") UUID shortUrlUUID,
-                                            @ModelAttribute("uuidShortUrlIdMap") Map<UUID, Long> uuidShortUrlIdMap,
+                                            @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
                                             RedirectAttributes redirectAttributes) {
 
         ModelAndView mav = new ModelAndView();
@@ -186,13 +183,13 @@ public class ShortUrlController {
                 .fromMethodName(ShortUrlController.class, "getSystemUris", null, null, null)
                 .buildAndExpand();
 
-        if (!uuidShortUrlIdMap.containsKey(shortUrlUUID)) {
-            uuidShortUrlIdMap.clear();
+        if (!urlDTOIdMap.containsKey(shortUrlUUID)) {
+            urlDTOIdMap.clear();
             mav.setViewName("redirect:" + systemUriManagementUri);
             return mav;
         }
 
-        Long shortUrlId = uuidShortUrlIdMap.get(shortUrlUUID);
+        Long shortUrlId = urlDTOIdMap.get(shortUrlUUID);
 
         shortUrlService.deleteById(shortUrlId);
         redirectAttributes.addFlashAttribute("message", "uri.deleted");
