@@ -26,9 +26,32 @@
 
     <div class="container">
 
-        <!-- New url -->
-        <div class="m-3 ">
-            <a class="btn btn-success w-100" th:href="@{/user/uris/new}" th:value="#{menu.nav.btn.uri}">New url</a>
+        <div class="bg-dark rounded m-2 p-2">
+            <!-- New url -->
+            <nav class="navbar">
+                <div class="container-fluid">
+                    <a class="btn btn-success d-flex flex-fill justify-content-center me-3" th:href="@{/user/uris/new}"
+                       th:value="#{menu.nav.btn.uri}">New url</a>
+                    <form class="d-flex" th:action="@{/user/uris}" method="get">
+                        <div class="input-group">
+                            <input class="form-control bg-dark-subtle" type="search" name="search" id="search"
+                                   placeholder="Search" th:value="${param.get('search')}">
+                            <a href="?" class="btn btn-danger"
+                               th:if="${!#strings.isEmpty(param.get('search')) && urisPage.numberOfElements != 0}">
+                                <i class="fa-solid fa-x"></i>
+                            </a>
+                            <input class="btn btn-secondary" type="submit" value="Submit">
+                        </div>
+                    </form>
+                </div>
+            </nav>
+
+            <!-- Search result message -->
+            <div th:if="${!#strings.isEmpty(param.get('search')) && urisPage.numberOfElements != 0}">
+                <p class="text-center text-white m-0">
+                    Search results for: <span class="fw-bold" th:text="|${param.get('search')}|"></span>
+                </p>
+            </div>
         </div>
 
         <!-- No urls message -->
