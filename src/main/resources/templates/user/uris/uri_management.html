@@ -35,19 +35,19 @@
                     <form class="d-flex" th:action="@{/user/uris}" method="get">
                         <div class="input-group">
                             <input class="form-control bg-dark-subtle" type="search" name="search" id="search"
-                                   placeholder="Search" th:value="${param.get('search')}">
+                                   th:placeholder="#{ui.uri.form.search}" th:value="${param.get('search')}">
                             <a href="?" class="btn btn-danger"
-                               th:if="${!#strings.isEmpty(param.get('search')) && urisPage.numberOfElements != 0}">
+                               th:if="${!#strings.isEmpty(param.get('search'))}">
                                 <i class="fa-solid fa-x"></i>
                             </a>
-                            <input class="btn btn-secondary" type="submit" value="Submit">
+                            <input class="btn btn-secondary" type="submit" th:value="#{menu.nav.btn.submit}">
                         </div>
                     </form>
                 </div>
             </nav>
 
             <!-- Search result message -->
-            <div th:if="${!#strings.isEmpty(param.get('search')) && urisPage.numberOfElements != 0}">
+            <div th:if="${!#strings.isEmpty(param.get('search'))}">
                 <p class="text-center text-white m-0">
                     Search results for: <span class="fw-bold" th:text="|${param.get('search')}|"></span>
                 </p>
@@ -150,7 +150,7 @@
 
                 <!-- Previous button -->
                 <li th:if="${!urisPage.isFirst}" class="page-item">
-                    <a href="#" th:href="@{${url}(p=${urisPage.number - 1})}"
+                    <a href="#" th:href="@{${uri}(p=${urisPage.number - 1},search=${param.get('search')})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-left"></i>
@@ -160,13 +160,13 @@
 
                 <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
-                    <a th:href="@{${url}(p=${page})}" th:text="${page + 1}" class="page-link border-0"
+                    <a th:href="@{${uri}(p=${page},search=${param.get('search')})}" th:text="${page + 1}" class="page-link border-0"
                         th:classappend="${page == urisPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
                 <!-- Next button -->
                 <li th:if="${!urisPage.isLast}" class="page-item">
-                    <a href="#" th:href="@{${url}(p=${urisPage.number + 1})}"
+                    <a href="#" th:href="@{${uri}(p=${urisPage.number + 1},search=${param.get('search')})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-right"></i>
