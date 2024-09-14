@@ -9,9 +9,13 @@ import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.model.validation.ShortUrlFormValidator;
 import com.prpa.Shortz.repository.query.Search;
+import com.prpa.Shortz.repository.query.TriFunction;
 import com.prpa.Shortz.repository.specification.ShortUrlSpecification;
 import com.prpa.Shortz.service.ShortUrlService;
 import com.prpa.Shortz.util.ControllerUtils;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -158,6 +162,7 @@ public class ShortUrlController {
     public String getSystemUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                                 @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
                                 @RequestParam(name = "search", defaultValue = "") String searchParam,
+                                @RequestParam(name = "user", defaultValue = "") String searchUserParam,
                                 Model model) {
 
         Optional<Specification<ShortUrl>> search = Optional.empty();
@@ -166,6 +171,17 @@ public class ShortUrlController {
             var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
             var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
             search = Optional.of(Specification.where(uriContains).or(slugEquals));
+        }
+
+        if (!searchUserParam.isBlank()) {
+            searchUserParam = searchUserParam.trim();
+            var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
+                    (builder, root, value) -> builder.equal(root.get("username"), value);
+
+            var ownerEquals = new ShortUrlSpecification(new Search("owner", searchOperation, searchUserParam));
+
+            search = search.map(shortUrlSpecification -> shortUrlSpecification.and(ownerEquals))
+                    .or(() -> Optional.of(Specification.where(ownerEquals)));
         }
 
         Page<ShortUrl> uriPage = search.isPresent() ?

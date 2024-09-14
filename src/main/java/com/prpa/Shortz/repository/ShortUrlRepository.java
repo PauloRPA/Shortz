@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long>, JpaSpecificationExecutor<ShortUrl> {
 
-    Page<ShortUrl> findAllByOwner(Pageable pageable, ShortzUser user);
+    Page<ShortUrl> findByOwner(ShortzUser owner, Pageable pageable);
 
     boolean existsBySlug(String slug);
 

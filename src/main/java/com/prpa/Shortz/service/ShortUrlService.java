@@ -13,8 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ShortUrlService {
@@ -24,10 +25,6 @@ public class ShortUrlService {
     @Autowired
     public ShortUrlService(ShortUrlRepository shortUrlRepository) {
         this.shortUrlRepository = shortUrlRepository;
-    }
-
-    public Page<ShortUrl> findAllUrlsByUser(Integer pageNumber, Integer pageSize, ShortzUser user) {
-        return shortUrlRepository.findAllByOwner(Pageable.ofSize(pageSize).withPage(pageNumber), user);
     }
 
     public Page<ShortUrl> findAll(Integer pageNumber, Integer pageSize) {

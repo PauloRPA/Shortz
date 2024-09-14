@@ -66,7 +66,8 @@ public class EncodeRandomUrlShortener implements UrlShortener {
         if (uri.getPath() == null) return Optional.empty();
         if (!supportedProtocols.isEmpty() && !supportedProtocols.contains(uri.getScheme())) return Optional.empty();
 
-        var encodedURI = new StringBuilder(stringEncoder.encode(uri.getHost() + uri.getPath()));
+        String query = uri.getQuery() != null ? uri.getQuery() : "";
+        var encodedURI = new StringBuilder(stringEncoder.encode(uri.getHost() + uri.getPath() + query));
 
         if (windowSize > encodedURI.length()) {
             final int diff = windowSize - encodedURI.length();
