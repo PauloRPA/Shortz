@@ -39,7 +39,7 @@ public class ShortUrlController {
     public static final String USER_URIS = "/user/uris";
     public static final String SYSTEM_URIS = "/user/adm/uris";
 
-    private static final Integer DEFAULT_PAGE_SIZE = 2;
+    private static final Integer DEFAULT_PAGE_SIZE = 12;
     private static final Integer NUMBER_PAGINATION_OPTIONS = 5;
 
     private final ShortUrlService shortUrlService;
