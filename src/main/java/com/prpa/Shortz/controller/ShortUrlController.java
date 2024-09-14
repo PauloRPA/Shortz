@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
@@ -96,17 +97,21 @@ public class ShortUrlController {
                           @RequestParam(name = "search", defaultValue = "") String searchParam,
                           Model model) {
 
-        Optional<Specification<ShortUrl>> search = Optional.empty();
+        ShortzUser currentUser = ((ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
+                (builder, root, value) -> builder.equal(root.get("username"), value);
+
+        Specification<ShortUrl> filterBy =
+                new ShortUrlSpecification(new Search("owner", searchOperation, currentUser.getUsername()));
+
         if (!searchParam.isBlank()) {
             searchParam = searchParam.trim();
             var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
             var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
-            search = Optional.of(Specification.where(uriContains).or(slugEquals));
+            filterBy = filterBy.and(uriContains).or(slugEquals);
         }
 
-        Page<ShortUrl> uriPage = search.isPresent() ?
-                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, search.get()) :
-                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
+        Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, filterBy);
 
         Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
 
