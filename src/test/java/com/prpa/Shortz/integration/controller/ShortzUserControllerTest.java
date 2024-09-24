@@ -7,7 +7,6 @@ import com.prpa.Shortz.model.enums.Role;
 import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;
-import org.assertj.core.api.ExtensionPoints;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -301,7 +300,6 @@ public class ShortzUserControllerTest {
     public void whenUserPostEditPageWithValidUser_shouldUpdateDBAndRedirectToGetUserManagement() {
         //Given
         final UUID TEST_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        final ShortzUserDTO TEST_USER = testUserDTO;
         String NEW_USERNAME = USER_USERNAME.repeat(2);
 
         shortzUserRepository.save(testUser);
@@ -544,7 +542,7 @@ public class ShortzUserControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage");
 
         assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
         assertThat(dtosFound.get(0).getUsername()).isEqualTo(USER_USERNAME);
@@ -574,7 +572,7 @@ public class ShortzUserControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage");
 
         assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
         assertThat(dtosFound.get(0).getUsername()).isEqualTo(USER_EXPECTED_TO_BE_FOUND);
@@ -599,7 +597,7 @@ public class ShortzUserControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage");
 
         assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
         assertThat(dtosFound.isEmpty()).isTrue();

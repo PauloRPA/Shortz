@@ -1,5 +1,6 @@
 package com.prpa.Shortz.integration.controller;
 
+import com.prpa.Shortz.integration.TestUtils;
 import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortUrlDTO;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
@@ -763,14 +763,14 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por uma url que existe deve retornar o resultado corretamente.")
     public void whenUserGetUriManagementWithURISearchThatExists_shouldReturnResultsCorrectly() {
         final String URL_PRESENT = "http://localhost:9999/how-to-draw";
         final int expectedNumberOfSearchResults = 1;
 
-        insertUrls(List.of("http://localhost:9999/user/uris",
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris",
                 "http://localhost:9999/h2-console",
                 URL_PRESENT), urlOwner);
 
@@ -782,28 +782,21 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(URL_PRESENT);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(URL_PRESENT);
     }
 
     @Test
     @SneakyThrows
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por uma url que não existe deve retornar vazio.")
     public void whenUserGetUriManagementWithURISearchThatNotExist_shouldReturnEmpty() {
         final int expectedNumberOfSearchResults = 0;
 
-        insertUrls(List.of("http://localhost:9999/user/uris?search=dsf",
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw"), urlOwner);
 
@@ -815,22 +808,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.isEmpty()).isTrue();
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.isEmpty()).isTrue();
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por algo que existe deve retornar o resultado corretamente.")
     public void whenUserGetUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
@@ -838,7 +824,8 @@ public class ShortUrlControllerTest {
         String PRESENT_URI = "http://localhost:9999/how-to-draw";
         String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get().toString();
 
-        insertUrls(List.of("http://localhost:9999/user/uris?search=dsf",
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 PRESENT_URI), urlOwner);
 
@@ -850,17 +837,10 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(PRESENT_URI);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(PRESENT_URI);
     }
 
     // *********************************
@@ -870,14 +850,14 @@ public class ShortUrlControllerTest {
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por uma url que existe deve retornar o resultado corretamente.")
     public void whenUserGetSystemUriManagementWithURISearchThatExists_shouldReturnResultsCorrectly() {
         final String URL_PRESENT = "http://localhost:9999/how-to-draw";
         final int expectedNumberOfSearchResults = 1;
 
-        insertUrls(List.of("http://localhost:9999/user/uris?search=dsf",
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 URL_PRESENT), urlOwner);
 
@@ -889,28 +869,21 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(URL_PRESENT);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(URL_PRESENT);
     }
 
     @Test
     @SneakyThrows
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por uma url que não existe deve retornar vazio.")
     public void whenUserGetSystemUriManagementWithURISearchThatNotExist_shouldReturnEmpty() {
         final int expectedNumberOfSearchResults = 0;
 
-        insertUrls(List.of("http://localhost:9999/user/uris?search=dsf",
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw"), urlOwner);
 
@@ -922,22 +895,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.isEmpty()).isTrue();
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.isEmpty()).isTrue();
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário pesquisar por algo que existe deve retornar o resultado corretamente.")
     public void whenUserGetSystemUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
@@ -945,7 +911,8 @@ public class ShortUrlControllerTest {
         String PRESENT_URI = "http://localhost:9999/how-to-draw";
         String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get().toString();
 
-        insertUrls(List.of("http://localhost:9999/user/adm/uris?search=dsf",
+        insertUrls(List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 PRESENT_URI), urlOwner);
 
@@ -957,23 +924,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(PRESENT_URI);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(PRESENT_URI);
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário filtrar por usuário que existe deve retornar apenas uris daquele usuário.")
     public void whenUserGetSystemUriManagementWithUserFilter_shouldReturnCorrectly() {
@@ -981,7 +940,8 @@ public class ShortUrlControllerTest {
         String suffix = "2";
 
         shortUrlRepository.deleteAll();
-        List<String> systemUris = List.of("http://localhost:9999/user/adm/uris?search=dsf",
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw");
 
@@ -998,23 +958,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(systemUris.get(0) + suffix);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(systemUris.get(0) + suffix);
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário filtrar por usuário que existe com pesquisa deve retornar corretamente.")
     public void whenUserGetSystemUriManagementWithUserFilterAndSearch_shouldReturnCorrectly() {
@@ -1022,7 +974,8 @@ public class ShortUrlControllerTest {
         String suffix = "2";
 
         shortUrlRepository.deleteAll();
-        List<String> systemUris = List.of("http://localhost:9999/user/adm/uris?search=dsf",
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw");
 
@@ -1040,23 +993,15 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
 
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.get(0)).isEqualTo(systemUris.get(2) + suffix);
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(systemUris.get(2) + suffix);
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário filtrar por usuário que não existe deve retornar apenas uris daquele usuário.")
     public void whenUserGetSystemUriManagementWithUserNotExistFilter_shouldReturnCorrectly() {
@@ -1064,7 +1009,8 @@ public class ShortUrlControllerTest {
         String suffix = "2";
 
         shortUrlRepository.deleteAll();
-        List<String> systemUris = List.of("http://localhost:9999/user/adm/uris?search=dsf",
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw");
 
@@ -1081,22 +1027,13 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
-
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
     }
 
     @Test
     @SneakyThrows
     @DirtiesContext
-    @SuppressWarnings("unchecked")
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Se o o usuário filtrar por usuário que não existe com pesquisa deve retornar corretamente.")
     public void whenUserGetSystemUriManagementWithUserFilterNotExistAndSearch_shouldReturnCorrectly() {
@@ -1104,7 +1041,8 @@ public class ShortUrlControllerTest {
         String suffix = "2";
 
         shortUrlRepository.deleteAll();
-        List<String> systemUris = List.of("http://localhost:9999/user/adm/uris?search=dsf",
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
                 "http://localhost:9999/h2-console",
                 "http://localhost:9999/how-to-draw");
 
@@ -1122,16 +1060,8 @@ public class ShortUrlControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Object urisPageObj = mvcResult.getModelAndView().getModel().get("urisPage");
-        Page<ShortUrlDTO> urisPage = (Page<ShortUrlDTO>) urisPageObj;
-
-        List<String> urisFound = urisPage.get()
-                .map(ShortUrlDTO::getUri)
-                .map(URI::toString)
-                .toList();
-
-        assertThat(urisPage.getTotalElements()).isEqualTo(expectedNumberOfSearchResults);
-        assertThat(urisFound.size()).isEqualTo(expectedNumberOfSearchResults);
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
     }
 
 

@@ -9,7 +9,7 @@ import java.util.Objects;
 public class TestUtils {
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> extractAttrbute(MvcResult mvcResult, String attribute, Class<T> expectedType) {
+    public static <T> List<T> extractAttrbute(MvcResult mvcResult, String attribute) {
         Object urisPageObj = Objects.requireNonNull(mvcResult.getModelAndView()).getModel().get(attribute);
         Page<T> urisPage = (Page<T>) urisPageObj;
         return urisPage.stream().toList();
