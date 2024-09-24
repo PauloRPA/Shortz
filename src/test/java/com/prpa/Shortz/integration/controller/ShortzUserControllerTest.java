@@ -1,12 +1,15 @@
 package com.prpa.Shortz.integration.controller;
 
+import com.prpa.Shortz.integration.TestUtils;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.dto.ShortzUserDTO;
 import com.prpa.Shortz.model.enums.Role;
 import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.repository.ShortzUserRepository;
 import lombok.SneakyThrows;
+import org.assertj.core.api.ExtensionPoints;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -19,8 +22,10 @@ import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -516,4 +521,99 @@ public class ShortzUserControllerTest {
         assertThat(shortzUserRepository.findByUsernameIgnoreCase(USER_USERNAME)).isPresent();
     }
 
+    // *********************************
+    // GET /user/adm?search=
+    // *********************************
+
+    @Test
+    @SneakyThrows
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Se o o usuário pesquisar por um username que existe deve retornar o resultado corretamente.")
+    public void whenUserGetUserManagementWithUsernameSearchThatExists_shouldReturnResultsCorrectly() {
+        final int expectedNumberOfSearchResults = 1;
+
+        shortzUserRepository.save(testUser);
+        insertUser("usernameThatShouldNotBeReturned", "emailFrom@anotherUser.com");
+        insertUser("anotherUser", "AntoheremailFrom@anotherUser.com");
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm")
+                        .param("search", USER_USERNAME.substring(0, USER_USERNAME.length() / 2))
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("userPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+
+        assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(dtosFound.get(0).getUsername()).isEqualTo(USER_USERNAME);
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Se o o usuário pesquisar por um email que existe deve retornar o resultado corretamente.")
+    public void whenUserGetUserManagementWithEmailSearchThatExists_shouldReturnResultsCorrectly() {
+        final int expectedNumberOfSearchResults = 1;
+        String USER_EXPECTED_TO_BE_FOUND = "userThatShouldBeFound";
+        String PRESENT_EMAIL = "thisIs@TheEmailTo.search";
+
+        shortzUserRepository.deleteAll();
+        shortzUserRepository.save(testUser);
+        insertUser("usernameThatShouldNotBeReturned", "emailFrom@anotherUser.com");
+        insertUser("anotherUser", "AnotheremailFrom@anotherUser.com");
+        insertUser(USER_EXPECTED_TO_BE_FOUND, PRESENT_EMAIL);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm")
+                        .param("search", PRESENT_EMAIL.substring(0, PRESENT_EMAIL.length() / 2))
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("userPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+
+        assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(dtosFound.get(0).getUsername()).isEqualTo(USER_EXPECTED_TO_BE_FOUND);
+    }
+
+    @Test
+    @SneakyThrows
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("Se o o usuário pesquisar por um usuário que não existe deve retornar vazio.")
+    public void whenUserGetUserManagementWithUserSearchThatNotExist_shouldReturnEmpty() {
+        final int expectedNumberOfSearchResults = 0;
+
+        shortzUserRepository.save(testUser);
+        insertUser("usernameThatShouldNotBeReturned", "emailFrom@anotherUser.com");
+        insertUser("anotherUser", "AntoheremailFrom@anotherUser.com");
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm")
+                        .param("search", "value not present")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("userPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortzUserDTO> dtosFound = TestUtils.extractAttrbute(mvcResult, "userPage", ShortzUserDTO.class);
+
+        assertThat(dtosFound.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(dtosFound.isEmpty()).isTrue();
+    }
+
+    private Long insertUser(String username, String email) {
+        return shortzUserRepository.save(ShortzUser.builder()
+                        .username(username)
+                        .email(email)
+                        .password(passwordEncoder.encode(USER_PASSWORD))
+                        .urlCreationLimit(UNLIMITED_URL_COUNT)
+                        .role(USER)
+                        .enabled(true)
+                        .build())
+                .getId();
+    }
 }
