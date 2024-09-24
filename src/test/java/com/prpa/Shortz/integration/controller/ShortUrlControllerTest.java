@@ -818,11 +818,11 @@ public class ShortUrlControllerTest {
     @SneakyThrows
     @DirtiesContext
     @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    @DisplayName("Se o o usuário pesquisar por algo que existe deve retornar o resultado corretamente.")
+    @DisplayName("Se o o usuário pesquisar por slug que existe deve retornar o resultado corretamente.")
     public void whenUserGetUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
         final int expectedNumberOfSearchResults = 1;
         String PRESENT_URI = "http://localhost:9999/how-to-draw";
-        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get().toString();
+        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get();
 
         insertUrls(List.of(
                 "http://localhost:9999/user/uris?search=dsf",
@@ -909,7 +909,7 @@ public class ShortUrlControllerTest {
     public void whenUserGetSystemUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
         final int expectedNumberOfSearchResults = 1;
         String PRESENT_URI = "http://localhost:9999/how-to-draw";
-        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get().toString();
+        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get();
 
         insertUrls(List.of(
                 "http://localhost:9999/user/adm/uris?search=dsf",
