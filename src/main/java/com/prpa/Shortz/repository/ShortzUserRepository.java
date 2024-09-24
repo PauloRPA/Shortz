@@ -3,12 +3,13 @@ package com.prpa.Shortz.repository;
 import com.prpa.Shortz.model.ShortzUser;
 import com.prpa.Shortz.model.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface ShortzUserRepository extends JpaRepository<ShortzUser, Long> {
+public interface ShortzUserRepository extends JpaRepository<ShortzUser, Long>, JpaSpecificationExecutor<ShortzUser> {
 
     boolean existsByRole(Role role);
 
