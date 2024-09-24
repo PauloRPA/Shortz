@@ -25,6 +25,50 @@
     </div>
 
     <div class="container">
+        <div class="bg-dark rounded m-2 p-2">
+
+            <!-- Search container -->
+            <nav class="navbar">
+                <div class="container-fluid">
+                    <form class="d-flex flex-fill" th:action="@{/user/adm/uris}" method="get">
+                        <!--Filter By User-->
+                        <div class="input-group w-50 mx-1">
+                            <label class="input-group-text bg-secondary text-white border-secondary user-select-none"
+                                   th:text="#{ui.uri.form.search.label}" for="user">Filter:</label>
+                            <input class="form-control bg-dark-subtle" type="search" name="user" id="user"
+                                   th:placeholder="#{ui.uri.form.search.user}" th:value="${param.get('user')}">
+                            <a th:href="@{?(search=${param.get('search')})}"
+                               class="btn btn-danger"
+                               th:if="${!#strings.isEmpty(param.get('user'))}">
+                                <i class="fa-solid fa-x"></i>
+                            </a>
+                        </div>
+                        <!-- Search -->
+                        <div class="input-group flex-grow-1 mx-1">
+                            <label class="input-group-text bg-secondary text-white border-secondary user-select-none"
+                                   th:text="#{ui.uri.form.search}" for="search">Search:</label>
+                            <input class="form-control bg-dark-subtle" type="search" name="search"
+                                   id="search"
+                                   th:placeholder="#{ui.uri.form.search}" th:value="${param.get('search')}">
+                            <a th:href="@{?(user=${param.get('user')})}"
+                               class="btn btn-danger"
+                               th:if="${!#strings.isEmpty(param.get('search'))}">
+                                <i class="fa-solid fa-x"></i>
+                            </a>
+                            <input class="btn btn-secondary" type="submit" th:value="#{menu.nav.btn.submit}">
+                        </div>
+                    </form>
+                </div>
+            </nav>
+
+            <!-- Search result message -->
+            <div th:if="${!#strings.isEmpty(param.get('search'))}">
+                <p class="text-center text-white m-0">
+                    Search results for: <span class="fw-bold" th:text="|${param.get('search')}|"></span>
+                </p>
+            </div>
+        </div>
+
         <!-- No urls message -->
         <div class="mt-5" th:if="${urisPage.numberOfElements} == 0">
             <h2 class="text-white text-center bg-dark rounded lh-lg" th:text="#{empty.urls}"></h2>
@@ -125,7 +169,10 @@
 
                 <!-- Previous button -->
                 <li th:if="${!urisPage.isFirst}" class="page-item">
-                    <a href="#" th:href="@{${uri}(p=${urisPage.number - 1})}"
+                    <a href="#"
+                       th:href="@{${uri}(p=${urisPage.number - 1}
+                                   ,search=${param.get('search')}
+                                   ,user=${param.get('user')})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-left"></i>
@@ -135,13 +182,17 @@
 
                 <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
-                    <a th:href="@{${uri}(p=${page})}" th:text="${page + 1}" class="page-link border-0"
+                    <a th:href="@{${uri}(p=${page},search=${param.get('search')},user=${param.get('user')})}"
+                       th:text="${page + 1}" class="page-link border-0"
                         th:classappend="${page == urisPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
                 <!-- Next button -->
                 <li th:if="${!urisPage.isLast}" class="page-item">
-                    <a href="#" th:href="@{${uri}(p=${urisPage.number + 1})}"
+                    <a href="#"
+                       th:href="@{${uri}(p=${urisPage.number + 1}
+                                   ,search=${param.get('search')}
+                                   ,user=${param.get('user')})}"
                         class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-right"></i>

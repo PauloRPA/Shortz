@@ -1,7 +1,9 @@
 package com.prpa.Shortz.integration.controller;
 
+import com.prpa.Shortz.integration.TestUtils;
 import com.prpa.Shortz.model.ShortUrl;
 import com.prpa.Shortz.model.ShortzUser;
+import com.prpa.Shortz.model.dto.ShortUrlDTO;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.repository.ShortUrlRepository;
 import com.prpa.Shortz.repository.ShortzUserRepository;
@@ -20,7 +22,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.net.URI;
 import java.time.Instant;
@@ -42,6 +44,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @SpringBootTest(properties = {"SUPPORTED_PROTOCOLS = https,http,sftp"})
 public class ShortUrlControllerTest {
+
+    public static final String ALTERNATIVE_USER_EMAIL = "test2@user3.com";
+    public static final String ALTERNATIVE_USER_USERNAME = "testUser2";
 
     public static final Long USER_ID = 2L;
     public static final String USER_PASSWORD = "123";
@@ -72,14 +77,24 @@ public class ShortUrlControllerTest {
 
     private ShortUrl testUrl;
 
+    private ShortzUser urlOwner;
+    private ShortzUser alternativeUser;
+
     @BeforeEach
     public void setup() {
-        ShortzUser urlOwner = ShortzUser.builder()
+        ShortzUser.ShortzUserBuilder builder = ShortzUser.builder()
                 .username(USER_USERNAME)
                 .email(USER_EMAIL)
                 .password(passwordEncoder.encode(USER_PASSWORD))
                 .id(USER_ID).urlCreationLimit(UNLIMITED_URL_COUNT)
-                .role(ADMIN).enabled(true).build();
+                .role(ADMIN).enabled(true);
+
+        urlOwner = builder.build();
+        alternativeUser = builder
+                .id(USER_ID + 2)
+                .username(ALTERNATIVE_USER_USERNAME)
+                .email(ALTERNATIVE_USER_EMAIL)
+                .build();
 
         ShortzUser urlLimitedOwner = ShortzUser.builder()
                 .username(USER_URL_LIMIT_1_USERNAME)
@@ -100,6 +115,7 @@ public class ShortUrlControllerTest {
 
         shortzUserRepository.save(urlOwner);
         shortzUserRepository.save(urlLimitedOwner);
+        shortzUserRepository.save(alternativeUser);
     }
 
     // *********************************
@@ -460,7 +476,7 @@ public class ShortUrlControllerTest {
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
-                    .andExpect(MockMvcResultMatchers.content().string(expectedString));
+                    .andExpect(content().string(expectedString));
         }
     }
 
@@ -496,7 +512,7 @@ public class ShortUrlControllerTest {
                             .with(csrf()))
                     .andExpect(status().isBadRequest())
                     .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
-                    .andExpect(MockMvcResultMatchers.content().string(""));
+                    .andExpect(content().string(""));
         }
     }
 
@@ -739,4 +755,336 @@ public class ShortUrlControllerTest {
 
         return invalidUris.toArray(String[]::new);
     }
+
+    // *********************************
+    // GET /user/uris?search=
+    // *********************************
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por uma url que existe deve retornar o resultado corretamente.")
+    public void whenUserGetUriManagementWithURISearchThatExists_shouldReturnResultsCorrectly() {
+        final String URL_PRESENT = "http://localhost:9999/how-to-draw";
+        final int expectedNumberOfSearchResults = 1;
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris",
+                "http://localhost:9999/h2-console",
+                URL_PRESENT), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/uris")
+                        .param("search", "how-to-draw")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(URL_PRESENT);
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por uma url que não existe deve retornar vazio.")
+    public void whenUserGetUriManagementWithURISearchThatNotExist_shouldReturnEmpty() {
+        final int expectedNumberOfSearchResults = 0;
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw"), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/uris")
+                        .param("search", "value not present")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.isEmpty()).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por slug que existe deve retornar o resultado corretamente.")
+    public void whenUserGetUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
+        final int expectedNumberOfSearchResults = 1;
+        String PRESENT_URI = "http://localhost:9999/how-to-draw";
+        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get();
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                PRESENT_URI), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/uris")
+                        .param("search", PRESENT_SLUG)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(PRESENT_URI);
+    }
+
+    // *********************************
+    // GET /user/adm/uris?search=
+    // *********************************
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por uma url que existe deve retornar o resultado corretamente.")
+    public void whenUserGetSystemUriManagementWithURISearchThatExists_shouldReturnResultsCorrectly() {
+        final String URL_PRESENT = "http://localhost:9999/how-to-draw";
+        final int expectedNumberOfSearchResults = 1;
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                URL_PRESENT), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("search", "how-to-draw")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(URL_PRESENT);
+    }
+
+    @Test
+    @SneakyThrows
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por uma url que não existe deve retornar vazio.")
+    public void whenUserGetSystemUriManagementWithURISearchThatNotExist_shouldReturnEmpty() {
+        final int expectedNumberOfSearchResults = 0;
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw"), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("search", "value not present")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.isEmpty()).isTrue();
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário pesquisar por algo que existe deve retornar o resultado corretamente.")
+    public void whenUserGetSystemUriManagementWithSlugSearchThatExists_shouldReturnResultsCorrectly() {
+        final int expectedNumberOfSearchResults = 1;
+        String PRESENT_URI = "http://localhost:9999/how-to-draw";
+        String PRESENT_SLUG = urlShortener.encodeUri(URI.create(PRESENT_URI)).get();
+
+        insertUrls(List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                PRESENT_URI), urlOwner);
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("search", PRESENT_SLUG)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(PRESENT_URI);
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário filtrar por usuário que existe deve retornar apenas uris daquele usuário.")
+    public void whenUserGetSystemUriManagementWithUserFilter_shouldReturnCorrectly() {
+        final int expectedNumberOfSearchResults = 3;
+        String suffix = "2";
+
+        shortUrlRepository.deleteAll();
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw");
+
+        systemUris.forEach(url -> {
+            insertUrl(urlOwner, url);
+            insertUrl(alternativeUser, url + suffix);
+        });
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("user", ALTERNATIVE_USER_USERNAME)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(systemUris.get(0) + suffix);
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário filtrar por usuário que existe com pesquisa deve retornar corretamente.")
+    public void whenUserGetSystemUriManagementWithUserFilterAndSearch_shouldReturnCorrectly() {
+        final int expectedNumberOfSearchResults = 1;
+        String suffix = "2";
+
+        shortUrlRepository.deleteAll();
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw");
+
+        systemUris.forEach(url -> {
+            insertUrl(urlOwner, url);
+            insertUrl(alternativeUser, url + suffix);
+        });
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("search", "how-to-draw")
+                        .param("user", ALTERNATIVE_USER_USERNAME)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+        assertThat(shortUrlDTOS.get(0).getUri().toString()).isEqualTo(systemUris.get(2) + suffix);
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário filtrar por usuário que não existe deve retornar apenas uris daquele usuário.")
+    public void whenUserGetSystemUriManagementWithUserNotExistFilter_shouldReturnCorrectly() {
+        final int expectedNumberOfSearchResults = 0;
+        String suffix = "2";
+
+        shortUrlRepository.deleteAll();
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw");
+
+        systemUris.forEach(url -> {
+            insertUrl(urlOwner, url);
+            insertUrl(alternativeUser, url + suffix);
+        });
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("user", "NON_EXISTENT_USER")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+    }
+
+    @Test
+    @SneakyThrows
+    @DirtiesContext
+    @WithUserDetails(value = USER_USERNAME, setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @DisplayName("Se o o usuário filtrar por usuário que não existe com pesquisa deve retornar corretamente.")
+    public void whenUserGetSystemUriManagementWithUserFilterNotExistAndSearch_shouldReturnCorrectly() {
+        final int expectedNumberOfSearchResults = 0;
+        String suffix = "2";
+
+        shortUrlRepository.deleteAll();
+        List<String> systemUris = List.of(
+                "http://localhost:9999/user/adm/uris?search=dsf",
+                "http://localhost:9999/h2-console",
+                "http://localhost:9999/how-to-draw");
+
+        systemUris.forEach(url -> {
+            insertUrl(urlOwner, url);
+            insertUrl(alternativeUser, url + suffix);
+        });
+
+        MvcResult mvcResult = mockMvc.perform(get("/user/adm/uris")
+                        .param("search", "how-to-draw")
+                        .param("user", "NON_EXISTENT_USER")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(model().attributeExists("urisPage"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<ShortUrlDTO> shortUrlDTOS = TestUtils.extractAttrbute(mvcResult, "urisPage");
+        assertThat(shortUrlDTOS.size()).isEqualTo(expectedNumberOfSearchResults);
+    }
+
+
+
+    private void insertUrls(List<String> urls, ShortzUser owner) {
+        shortUrlRepository.deleteAll();
+
+        for (String url : urls) {
+            insertUrl(owner, url);
+        }
+    }
+
+    private void insertUrl(ShortzUser owner, String url) {
+        ShortUrl shorturl = ShortUrl.builder()
+                .owner(owner)
+                .creationTimestamp(Instant.now())
+                .hit(0)
+                .slug(urlShortener.encodeUri(URI.create(url)).get())
+                .uri(url)
+                .build();
+
+        shortUrlRepository.save(shorturl);
+    }
+
+
 }

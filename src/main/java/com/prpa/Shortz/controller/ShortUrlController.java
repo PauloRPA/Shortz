@@ -8,11 +8,18 @@ import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.model.validation.ShortUrlFormValidator;
+import com.prpa.Shortz.repository.query.Search;
+import com.prpa.Shortz.repository.query.TriFunction;
+import com.prpa.Shortz.repository.specification.ShortUrlSpecification;
 import com.prpa.Shortz.service.ShortUrlService;
 import com.prpa.Shortz.util.ControllerUtils;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,18 +28,21 @@ import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.util.UriComponents;
 
 import java.util.*;
 
 import static com.prpa.Shortz.model.validation.ShortUrlFormValidator.toValidUriFormat;
+import static com.prpa.Shortz.repository.query.SearchOperation.EQUALS;
+import static com.prpa.Shortz.repository.query.SearchOperation.LIKE;
 
 @Controller
 @RequestMapping("/user")
 @SessionAttributes("urlDTOIdMap")
 public class ShortUrlController {
+
+    public static final String USER_URIS = "/user/uris";
+    public static final String SYSTEM_URIS = "/user/adm/uris";
 
     private static final Integer DEFAULT_PAGE_SIZE = 12;
     private static final Integer NUMBER_PAGINATION_OPTIONS = 5;
@@ -84,14 +94,28 @@ public class ShortUrlController {
     @GetMapping("/uris")
     public String getUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                           @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
+                          @RequestParam(name = "search", defaultValue = "") String searchParam,
                           Model model) {
 
-        ShortzUser currentUser = (ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ShortzUser currentUser = ((ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
+                (builder, root, value) -> builder.equal(root.get("username"), value);
 
-        Page<ShortUrl> uriPage = shortUrlService.findAllUrlsByUser(pageParam, DEFAULT_PAGE_SIZE, currentUser);
+        Specification<ShortUrl> filterBy =
+                new ShortUrlSpecification(new Search("owner", searchOperation, currentUser.getUsername()));
+
+        if (!searchParam.isBlank()) {
+            searchParam = searchParam.trim();
+            var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
+            var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
+            filterBy = filterBy.and(uriContains).or(slugEquals);
+        }
+
+        Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, filterBy);
+
         Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
 
-        model.addAttribute("urisPage", uriPage);
+        model.addAttribute("urisPage", uriDTOPage);
         if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
             return "redirect:/user/uris";
         }
@@ -122,13 +146,10 @@ public class ShortUrlController {
 
         ModelAndView mav = new ModelAndView();
 
-        final UriComponents urlManagementUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortUrlController.class, "getUris", null, null, null)
-                .buildAndExpand();
-
         if (!urlDTOIdMap.containsKey(shortUrlUUID)) {
             urlDTOIdMap.clear();
-            mav.setViewName("redirect:" + urlManagementUri);
+            mav.setStatus(HttpStatus.FOUND);
+            mav.setViewName("redirect:" + USER_URIS);
             return mav;
         }
 
@@ -137,16 +158,41 @@ public class ShortUrlController {
         shortUrlService.deleteById(shortUrlId);
         redirectAttributes.addFlashAttribute("message", "uri.deleted");
         redirectAttributes.addFlashAttribute("messageType", "success");
-        mav.setViewName("redirect:" + urlManagementUri);
+        mav.setStatus(HttpStatus.FOUND);
+        mav.setViewName("redirect:" + USER_URIS);
         return mav;
     }
 
     @GetMapping("/adm/uris")
     public String getSystemUris(@RequestParam(name = "p", defaultValue = "0") Integer pageParam,
                                 @ModelAttribute("urlDTOIdMap") Map<UUID, Long> urlDTOIdMap,
+                                @RequestParam(name = "search", defaultValue = "") String searchParam,
+                                @RequestParam(name = "user", defaultValue = "") String searchUserParam,
                                 Model model) {
 
-        Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
+        Optional<Specification<ShortUrl>> search = Optional.empty();
+        if (!searchParam.isBlank()) {
+            searchParam = searchParam.trim();
+            var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
+            var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
+            search = Optional.of(Specification.where(uriContains).or(slugEquals));
+        }
+
+        if (!searchUserParam.isBlank()) {
+            searchUserParam = searchUserParam.trim();
+            var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
+                    (builder, root, value) -> builder.equal(root.get("username"), value);
+
+            var ownerEquals = new ShortUrlSpecification(new Search("owner", searchOperation, searchUserParam));
+
+            search = search.map(shortUrlSpecification -> shortUrlSpecification.and(ownerEquals))
+                    .or(() -> Optional.of(Specification.where(ownerEquals)));
+        }
+
+        Page<ShortUrl> uriPage = search.isPresent() ?
+                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, search.get()) :
+                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
+
         Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
 
         model.addAttribute("urisPage", uriDTOPage);
@@ -181,13 +227,9 @@ public class ShortUrlController {
 
         ModelAndView mav = new ModelAndView();
 
-        final UriComponents systemUriManagementUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortUrlController.class, "getSystemUris", null, null, null)
-                .buildAndExpand();
-
         if (!urlDTOIdMap.containsKey(shortUrlUUID)) {
             urlDTOIdMap.clear();
-            mav.setViewName("redirect:" + systemUriManagementUri);
+            mav.setViewName("redirect:" + SYSTEM_URIS);
             return mav;
         }
 
@@ -196,7 +238,7 @@ public class ShortUrlController {
         shortUrlService.deleteById(shortUrlId);
         redirectAttributes.addFlashAttribute("message", "uri.deleted");
         redirectAttributes.addFlashAttribute("messageType", "success");
-        mav.setViewName("redirect:" + systemUriManagementUri);
+        mav.setViewName("redirect:" + SYSTEM_URIS);
         return mav;
     }
 

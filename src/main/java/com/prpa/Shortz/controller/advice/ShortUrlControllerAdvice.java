@@ -22,10 +22,7 @@ public class ShortUrlControllerAdvice {
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public String handleInvalidMethodArgument() {
-        final UriComponents uriManagementUri = MvcUriComponentsBuilder
-                .fromMethodName(ShortUrlController.class, "getUris", null, null, null)
-                .buildAndExpand();
-        return "redirect:" + uriManagementUri;
+        return "redirect:" + ShortUrlController.USER_URIS;
     }
 
     @ResponseBody

@@ -5,14 +5,15 @@ import com.prpa.Shortz.model.ShortzUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long> {
+public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long>, JpaSpecificationExecutor<ShortUrl> {
 
-    Page<ShortUrl> findAllByOwner(Pageable pageable, ShortzUser user);
+    Page<ShortUrl> findByOwner(ShortzUser owner, Pageable pageable);
 
     boolean existsBySlug(String slug);
 

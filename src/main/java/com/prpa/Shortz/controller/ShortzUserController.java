@@ -7,11 +7,14 @@ import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.model.form.ShortzUserForm;
 import com.prpa.Shortz.model.validation.ShortzUserEditFormValidator;
 import com.prpa.Shortz.model.validation.ShortzUserFormValidator;
+import com.prpa.Shortz.repository.query.Search;
+import com.prpa.Shortz.repository.specification.ShortzUserSpecification;
 import com.prpa.Shortz.service.ShortzUserService;
 import com.prpa.Shortz.util.ControllerUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
@@ -23,6 +26,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.*;
 
 import static com.prpa.Shortz.model.enums.Role.ADMIN;
+import static com.prpa.Shortz.repository.query.SearchOperation.EQUALS;
+import static com.prpa.Shortz.repository.query.SearchOperation.LIKE;
 
 @Controller
 @RequestMapping("/user")
@@ -83,30 +88,47 @@ public class ShortzUserController {
     }
 
     @GetMapping("/adm")
-    public String getUserManagement(@RequestParam(value = "p", defaultValue = "0") int page, Model model,
-                                    @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idUsernameMap){
-        Page<ShortzUserDTO> users = shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
-        model.addAttribute("userPage", users);
+    public ModelAndView getUserManagement(@RequestParam(value = "p", defaultValue = "0") int page,
+                                          @ModelAttribute("uuidToUsernameMap") Map<UUID, String> idUsernameMap,
+                                          @RequestParam(name = "search", defaultValue = "") String searchParam) {
 
-        if (users.getTotalPages() > 0 && page > users.getTotalPages()) {
-            return "redirect:/user/adm";
+        ModelAndView mav = new ModelAndView();
+
+        Optional<Specification<ShortzUser>> search = Optional.empty();
+        if (!searchParam.isBlank()) {
+            searchParam = searchParam.trim();
+            var slugEquals = new ShortzUserSpecification(new Search("username", LIKE, searchParam));
+            var uriContains = new ShortzUserSpecification(new Search("email", LIKE, searchParam));
+            search = Optional.of(Specification.where(uriContains).or(slugEquals));
+        }
+
+        Page<ShortzUserDTO> usersPage = search.isPresent() ?
+                shortzUserService.findAll(page, DEFAULT_PAGE_SIZE, search.get()) :
+                shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
+
+        mav.getModelMap().addAttribute("userPage", usersPage);
+
+        if (usersPage.getTotalPages() > 0 && page > usersPage.getTotalPages()) {
+            mav.setViewName("redirect:/user/adm");
+            return mav;
         }
 
         idUsernameMap.clear();
-        users.forEach(user -> {
+        usersPage.forEach(user -> {
             idUsernameMap.put(user.getId(), user.getUsername());
         });
 
-        if (users.getTotalPages() > 1) {
-            int currentPage = users.getNumber();
-            int totalPages = users.getTotalPages();
+        if (usersPage.getTotalPages() > 1) {
+            int currentPage = usersPage.getNumber();
+            int totalPages = usersPage.getTotalPages();
 
             List<Integer> pagination = ControllerUtils.getPagination(NUMBER_PAGINATION_OPTIONS, totalPages, currentPage);
 
-            model.addAttribute("pagination", pagination);
+            mav.getModelMap().addAttribute("pagination", pagination);
         }
 
-        return "user/adm/user_management";
+        mav.setViewName("user/adm/user_management");
+        return mav;
     }
 
     @GetMapping("/adm/edit")

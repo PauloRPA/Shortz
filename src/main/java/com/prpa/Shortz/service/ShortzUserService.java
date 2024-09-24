@@ -8,6 +8,7 @@ import com.prpa.Shortz.repository.ShortzUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -74,6 +75,22 @@ public class ShortzUserService implements UserDetailsService {
         });
     }
 
+    public Page<ShortzUserDTO> findAll(int page, int pageSize, Specification<ShortzUser> specification) {
+        Pageable pageable = Pageable.ofSize(pageSize).withPage(page);
+        Page<ShortzUser> users = shortzUserRepository.findAll(specification, pageable);
+
+        return users.map(user -> {
+            ShortzUserDTO shortzUserDTO = new ShortzUserDTO();
+            shortzUserDTO.setId(UUID.randomUUID());
+            shortzUserDTO.setUsername(user.getUsername());
+            shortzUserDTO.setEmail(user.getEmail());
+            shortzUserDTO.setRole(user.getRole());
+            shortzUserDTO.setEnabled(user.getEnabled());
+            shortzUserDTO.setUrlCreationLimit(user.getUrlCreationLimit());
+            return shortzUserDTO;
+        });
+    }
+
     public boolean existsByEmailIgnoreCase(String email) {
         return shortzUserRepository.existsByEmailIgnoreCase(email);
     }
@@ -114,4 +131,5 @@ public class ShortzUserService implements UserDetailsService {
     public Integer countUsersByRole(Role role) {
         return shortzUserRepository.countByRole(role);
     }
+
 }

@@ -8,12 +8,14 @@ import com.prpa.Shortz.repository.ShortUrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ShortUrlService {
@@ -25,12 +27,12 @@ public class ShortUrlService {
         this.shortUrlRepository = shortUrlRepository;
     }
 
-    public Page<ShortUrl> findAllUrlsByUser(Integer pageNumber, Integer pageSize, ShortzUser user) {
-        return shortUrlRepository.findAllByOwner(Pageable.ofSize(pageSize).withPage(pageNumber), user);
-    }
-
     public Page<ShortUrl> findAll(Integer pageNumber, Integer pageSize) {
         return shortUrlRepository.findAll(Pageable.ofSize(pageSize).withPage(pageNumber));
+    }
+
+    public Page<ShortUrl> findAll(Integer pageNumber, Integer pageSize, Specification<ShortUrl> search) {
+        return shortUrlRepository.findAll(search, Pageable.ofSize(pageSize).withPage(pageNumber));
     }
 
     public boolean deleteById(Long shortUrlId) {
@@ -85,5 +87,4 @@ public class ShortUrlService {
                         .uri(URI.create(shortUrl.getUri()))
                 .build());
     }
-
 }
