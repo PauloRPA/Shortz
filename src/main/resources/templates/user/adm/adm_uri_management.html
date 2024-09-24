@@ -26,10 +26,12 @@
 
     <div class="container">
         <div class="bg-dark rounded m-2 p-2">
-            <!-- New url -->
+
+            <!-- Search container -->
             <nav class="navbar">
                 <div class="container-fluid">
                     <form class="d-flex flex-fill" th:action="@{/user/adm/uris}" method="get">
+                        <!--Filter By User-->
                         <div class="input-group w-50 mx-1">
                             <label class="input-group-text bg-secondary text-white border-secondary user-select-none"
                                    th:text="#{ui.uri.form.search.label}" for="user">Filter:</label>
@@ -41,6 +43,7 @@
                                 <i class="fa-solid fa-x"></i>
                             </a>
                         </div>
+                        <!-- Search -->
                         <div class="input-group flex-grow-1 mx-1">
                             <label class="input-group-text bg-secondary text-white border-secondary user-select-none"
                                    th:text="#{ui.uri.form.search}" for="search">Search:</label>
