@@ -77,7 +77,7 @@ public class ShortUrlService {
         shortUrlRepository.save(shortUrl);
     }
 
-    public Page<ShortUrlDTO> urlToDTOPage(Page<ShortUrl> uris) {
+    public Page<ShortUrlDTO> pageToDTO(Page<ShortUrl> uris) {
         return uris.map(shortUrl -> ShortUrlDTO.builder()
                         .id(UUID.randomUUID().toString())
                         .creationTimestamp(shortUrl.getCreationTimestamp())

@@ -7,8 +7,7 @@ import com.prpa.Shortz.model.form.ShortzUserEditForm;
 import com.prpa.Shortz.model.form.ShortzUserForm;
 import com.prpa.Shortz.model.validation.ShortzUserEditFormValidator;
 import com.prpa.Shortz.model.validation.ShortzUserFormValidator;
-import com.prpa.Shortz.repository.query.Search;
-import com.prpa.Shortz.repository.specification.ShortzUserSpecification;
+import com.prpa.Shortz.repository.specification.ResourceSpecification;
 import com.prpa.Shortz.service.ShortzUserService;
 import com.prpa.Shortz.util.ControllerUtils;
 import jakarta.validation.Valid;
@@ -26,7 +25,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.*;
 
 import static com.prpa.Shortz.model.enums.Role.ADMIN;
-import static com.prpa.Shortz.repository.query.SearchOperation.EQUALS;
 import static com.prpa.Shortz.repository.query.SearchOperation.LIKE;
 
 @Controller
@@ -94,18 +92,14 @@ public class ShortzUserController {
 
         ModelAndView mav = new ModelAndView();
 
-        Optional<Specification<ShortzUser>> search = Optional.empty();
-        if (!searchParam.isBlank()) {
-            searchParam = searchParam.trim();
-            var slugEquals = new ShortzUserSpecification(new Search("username", LIKE, searchParam));
-            var uriContains = new ShortzUserSpecification(new Search("email", LIKE, searchParam));
-            search = Optional.of(Specification.where(uriContains).or(slugEquals));
-        }
+        Optional<Specification<ShortzUser>> search = ResourceSpecification.builder(ShortzUser.class)
+                .or("username", LIKE, searchParam)
+                .or("email", LIKE, searchParam)
+                .build();
 
         Page<ShortzUserDTO> usersPage = search.isPresent() ?
                 shortzUserService.findAll(page, DEFAULT_PAGE_SIZE, search.get()) :
                 shortzUserService.findAll(page, DEFAULT_PAGE_SIZE);
-
         mav.getModelMap().addAttribute("userPage", usersPage);
 
         if (usersPage.getTotalPages() > 0 && page > usersPage.getTotalPages()) {

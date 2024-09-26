@@ -8,14 +8,9 @@ import com.prpa.Shortz.model.exceptions.InvalidUriException;
 import com.prpa.Shortz.model.form.ShortUrlForm;
 import com.prpa.Shortz.model.shortener.contract.UrlShortener;
 import com.prpa.Shortz.model.validation.ShortUrlFormValidator;
-import com.prpa.Shortz.repository.query.Search;
-import com.prpa.Shortz.repository.query.TriFunction;
-import com.prpa.Shortz.repository.specification.ShortUrlSpecification;
+import com.prpa.Shortz.repository.specification.ResourceSpecification;
 import com.prpa.Shortz.service.ShortUrlService;
 import com.prpa.Shortz.util.ControllerUtils;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -98,22 +93,16 @@ public class ShortUrlController {
                           Model model) {
 
         ShortzUser currentUser = ((ShortzUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
-                (builder, root, value) -> builder.equal(root.get("username"), value);
+        Optional<Specification<ShortUrl>> search = ResourceSpecification.builder(ShortUrl.class)
+                .or("uri", LIKE, searchParam)
+                .or("slug", EQUALS, searchParam)
+                .and("owner.username", EQUALS, currentUser.getUsername())
+                .build();
 
-        Specification<ShortUrl> filterBy =
-                new ShortUrlSpecification(new Search("owner", searchOperation, currentUser.getUsername()));
-
-        if (!searchParam.isBlank()) {
-            searchParam = searchParam.trim();
-            var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
-            var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
-            filterBy = filterBy.and(uriContains).or(slugEquals);
-        }
-
-        Page<ShortUrl> uriPage = shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, filterBy);
-
-        Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
+        Page<ShortUrl> uriPage = search.isPresent() ?
+                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, search.get()) :
+                shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
+        Page<ShortUrlDTO> uriDTOPage = shortUrlService.pageToDTO(uriPage);
 
         model.addAttribute("urisPage", uriDTOPage);
         if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
@@ -170,30 +159,16 @@ public class ShortUrlController {
                                 @RequestParam(name = "user", defaultValue = "") String searchUserParam,
                                 Model model) {
 
-        Optional<Specification<ShortUrl>> search = Optional.empty();
-        if (!searchParam.isBlank()) {
-            searchParam = searchParam.trim();
-            var slugEquals = new ShortUrlSpecification(new Search("slug", EQUALS, searchParam));
-            var uriContains = new ShortUrlSpecification(new Search("uri", LIKE, searchParam));
-            search = Optional.of(Specification.where(uriContains).or(slugEquals));
-        }
-
-        if (!searchUserParam.isBlank()) {
-            searchUserParam = searchUserParam.trim();
-            var searchOperation = (TriFunction<CriteriaBuilder, Path<?>, Object, Predicate>)
-                    (builder, root, value) -> builder.equal(root.get("username"), value);
-
-            var ownerEquals = new ShortUrlSpecification(new Search("owner", searchOperation, searchUserParam));
-
-            search = search.map(shortUrlSpecification -> shortUrlSpecification.and(ownerEquals))
-                    .or(() -> Optional.of(Specification.where(ownerEquals)));
-        }
+        Optional<Specification<ShortUrl>> search = ResourceSpecification.builder(ShortUrl.class)
+                .or("slug", EQUALS, searchParam)
+                .or("uri", LIKE, searchParam)
+                .and("owner.username", LIKE, searchUserParam)
+                .build();
 
         Page<ShortUrl> uriPage = search.isPresent() ?
                 shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE, search.get()) :
                 shortUrlService.findAll(pageParam, DEFAULT_PAGE_SIZE);
-
-        Page<ShortUrlDTO> uriDTOPage = shortUrlService.urlToDTOPage(uriPage);
+        Page<ShortUrlDTO> uriDTOPage = shortUrlService.pageToDTO(uriPage);
 
         model.addAttribute("urisPage", uriDTOPage);
         if (uriPage.getTotalPages() > 0 && pageParam > uriPage.getTotalPages()) {
