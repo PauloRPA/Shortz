@@ -25,19 +25,19 @@
     </div>
 
     <div class="container">
-
         <div class="bg-dark rounded m-2 p-2">
+
             <!-- New url -->
             <nav class="navbar">
                 <div class="container-fluid">
-                    <a class="btn btn-success d-flex flex-fill justify-content-center me-3" th:href="@{/user/uris/new}"
-                       th:value="#{menu.nav.btn.uri}">New url</a>
-                    <form class="d-flex" th:action="@{/user/uris}" method="get">
+                    <a class="btn btn-success d-flex flex-fill justify-content-center m-1" th:href="@{/user/uris/new}"
+                        th:value="#{menu.nav.btn.uri}">New url</a>
+
+                    <form class="d-flex m-1" th:action="@{/user/uris}" method="get">
                         <div class="input-group">
                             <input class="form-control bg-dark-subtle" type="search" name="search" id="search"
-                                   th:placeholder="#{ui.uri.form.search}" th:value="${param.get('search')}">
-                            <a href="?" class="btn btn-danger"
-                               th:if="${!#strings.isEmpty(param.get('search'))}">
+                                th:placeholder="#{ui.uri.form.search}" th:value="${param.get('search')}">
+                            <a href="?" class="btn btn-danger" th:if="${!#strings.isEmpty(param.get('search'))}">
                                 <i class="fa-solid fa-x"></i>
                             </a>
                             <input class="btn btn-secondary" type="submit" th:value="#{menu.nav.btn.submit}">
@@ -160,7 +160,8 @@
 
                 <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
-                    <a th:href="@{${uri}(p=${page},search=${param.get('search')})}" th:text="${page + 1}" class="page-link border-0"
+                    <a th:href="@{${uri}(p=${page},search=${param.get('search')})}" th:text="${page + 1}"
+                        class="page-link border-0"
                         th:classappend="${page == urisPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 

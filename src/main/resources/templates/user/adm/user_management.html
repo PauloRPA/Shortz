@@ -26,37 +26,34 @@
 
     <div class="container">
 
-
         <!-- Search container -->
-        <div class="bg-dark rounded m-2 p-2">
-            <nav class="navbar">
-                <div class="container-fluid">
+        <div class="container-fluid">
+            <div class="bg-dark rounded my-2 p-2">
+
+                <nav class="navbar my-1 mx-3">
                     <form class="d-flex flex-fill" th:action="@{/user/adm}" method="get">
-                        <div class="input-group flex-grow-1 mx-1">
+                        <div class="input-group">
                             <label class="input-group-text bg-secondary text-white border-secondary user-select-none"
-                                   th:text="#{ui.uri.form.search}" for="search">Search:</label>
-                            <input class="form-control bg-dark-subtle" type="search" name="search"
-                                   id="search"
-                                   th:placeholder="#{ui.user.form.search}" th:value="${param.get('search')}">
-                            <a th:href="@{?(user=${param.get('user')})}"
-                               class="btn btn-danger"
-                               th:if="${!#strings.isEmpty(param.get('search'))}">
+                                th:text="#{ui.uri.form.search}" for="search">Search:</label>
+                            <input class="form-control bg-dark-subtle" type="search" name="search" id="search"
+                                th:placeholder="#{ui.user.form.search}" th:value="${param.get('search')}">
+                            <a th:href="@{?(user=${param.get('user')})}" class="btn btn-danger"
+                                th:if="${!#strings.isEmpty(param.get('search'))}">
                                 <i class="fa-solid fa-x"></i>
                             </a>
                             <input class="btn btn-secondary" type="submit" th:value="#{menu.nav.btn.submit}">
                         </div>
                     </form>
-                </div>
-            </nav>
+                </nav>
 
-            <!-- Search result message -->
-            <div th:if="${!#strings.isEmpty(param.get('search'))}">
-                <p class="text-center text-white m-0">
-                    Search results for: <span class="fw-bold" th:text="|${param.get('search')}|"></span>
-                </p>
+                <!-- Search result message -->
+                <div th:if="${!#strings.isEmpty(param.get('search'))}">
+                    <p class="text-center text-white m-0">
+                        Search results for: <span class="fw-bold" th:text="|${param.get('search')}|"></span>
+                    </p>
+                </div>
             </div>
         </div>
-
 
         <!-- No users message -->
         <div class="mt-5" th:if="${userPage.numberOfElements} == 0">
@@ -94,7 +91,9 @@
                         <p th:text="${user.email}">email</p>
                     </td>
                     <td class="d-md-table-cell d-none">
-                        <p th:text="${user.urlCreationLimit} == -1? #{ui.user.urllimit.unlimited}: ${user.urlCreationLimit}">Unlimited
+                        <p
+                            th:text="${user.urlCreationLimit} == -1? #{ui.user.urllimit.unlimited}: ${user.urlCreationLimit}">
+                            Unlimited
                         </p>
                     </td>
                     <td class="d-md-table-cell d-none">
@@ -162,10 +161,8 @@
 
                 <!-- Previous button -->
                 <li th:if="${!userPage.isFirst}" class="page-item">
-                    <a href="#"
-                       th:href="@{${url}(p=${userPage.number - 1},
-                               search=${param.get('search')})}"
-                        class="page-link border-0 text-white bg-dark">
+                    <a href="#" th:href="@{${url}(p=${userPage.number - 1},
+                               search=${param.get('search')})}" class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-left"></i>
                         </span>
@@ -175,17 +172,14 @@
                 <!-- Page numbers -->
                 <li th:each="page, stat : ${pagination}" class="page-item">
                     <a th:href="@{${url}(p=${page},
-                                search=${param.get('search')})}"
-                       th:text="${page + 1}"
-                       class="page-link border-0"
+                                search=${param.get('search')})}" th:text="${page + 1}" class="page-link border-0"
                         th:classappend="${page == userPage.number}? 'bg-dark-subtle text-black': 'bg-dark text-white'">1</a>
                 </li>
 
                 <!-- Next button -->
                 <li th:if="${!userPage.isLast}" class="page-item">
                     <a href="#" th:href="@{${url}(p=${userPage.number + 1},
-                                search=${param.get('search')})}"
-                        class="page-link border-0 text-white bg-dark">
+                                search=${param.get('search')})}" class="page-link border-0 text-white bg-dark">
                         <span>
                             <i class="fa-solid fa-circle-chevron-right"></i>
                         </span>
