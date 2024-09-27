@@ -11,6 +11,7 @@
 - [Instalação](#Instalação)
 - [Configuração](#Configuração)
 - [Funcionalidades](#Funcionalidades)
+- [Imagens](#Imagens)
 
 <!--toc:end-->
 
@@ -44,6 +45,25 @@ A aplicação também tem apenas um perfil (@Profile) no momento, sendo este, o 
 Essa é uma aplicação simples que permite com que o usuário encurte uma url para que posteriormente possa acessar a url original por meio de sua versão encurtada. A url encurtada pode ser arbitrária ou gerada pela aplicação.
 Um usuário com permisões de admin pode ativar, desativar, limitar a criação de urls curtas e altarar informações de outros usuários do sistema.
 Essa aplicação foi idealizada para ser usada em ambiente 'domestico' algo como um homelab com poucos usuários, portanto tenha em mente que, apesar de funcional, esta aplicação possui limitações de desempenho, segurança e escalabilidade que ja foram previstos durante seu processo de desenvolvimento.
+
+## Imagens
+
+Tenha em mente que este é um projeto ainda esta em desenvolvimento mudanças no front-end ainda serão feitas.
+
+**'*ShortUrls*' adicionadas pelo usuário**
+
+![ShortUrlsPage](https://github.com/user-attachments/assets/446b3b15-6874-475c-b875-8d99bf7c33a4)
+
 <hr>
 
+**'*ShortUrls*' de todos usuários**
 
+![AdmShortUrlsPage](https://github.com/user-attachments/assets/35f71797-cd7a-4dc8-8d1c-275ae737e7a8)
+
+<hr>
+
+**Usuários do sistema**
+
+![usermanagement](https://github.com/user-attachments/assets/d085ded9-6962-4d28-8340-c9e1a3259e09)
+
+<hr>
